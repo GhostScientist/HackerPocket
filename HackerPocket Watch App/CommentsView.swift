@@ -7,14 +7,6 @@
 
 import SwiftUI
 
-struct Comment: Codable, Identifiable {
-    let id: Int
-    let by: String
-    let text: String
-    let time: Int
-    let type: String
-}
-
 struct CommentsView: View {
     let commentIds: [Int]
     @State private var comments: [Comment] = []
@@ -24,9 +16,11 @@ struct CommentsView: View {
             VStack(alignment: .leading, spacing: 5) {
                 Text(comment.by)
                     .font(.headline)
-                Text(comment.text)
-                    .font(.subheadline)
-                Text("Posted: \(comment.time)")
+                Text(comment.textWithoutTags.decodingUnicodeCharacters)
+                    .font(.footnote)
+                    .lineLimit(4)
+                    .truncationMode(.tail)
+                Text(comment.postedTime)
                     .font(.caption)
             }
         }
@@ -43,6 +37,7 @@ struct CommentsView: View {
                 if let data = data {
                     if let comment = try? JSONDecoder().decode(Comment.self, from: data) {
                         DispatchQueue.main.async {
+                            print(comment)
                             comments.append(comment)
                         }
                     }
@@ -51,3 +46,8 @@ struct CommentsView: View {
         }
     }
 }
+
+extension String {
+    var decodingUnicodeCharacters: String { applyingTransform(.init("Hex-Any"), reverse: false) ?? "" }
+}
+

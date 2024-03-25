@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D3B2FCFC2BB0FF9800FE717F /* DetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3B2FCFB2BB0FF9800FE717F /* DetailView.swift */; };
+		D3B2FCFE2BB0FFB400FE717F /* StoryRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3B2FCFD2BB0FFB400FE717F /* StoryRowView.swift */; };
+		D3B2FD002BB1003400FE717F /* Types.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3B2FCFF2BB1003400FE717F /* Types.swift */; };
+		D3B2FD022BB1007A00FE717F /* CommentRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3B2FD012BB1007A00FE717F /* CommentRow.swift */; };
 		D3C101122BAF4E3700A6A63B /* HackerPocket Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = D3C101112BAF4E3700A6A63B /* HackerPocket Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		D3C101172BAF4E3700A6A63B /* HackerPocketApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3C101162BAF4E3700A6A63B /* HackerPocketApp.swift */; };
 		D3C101192BAF4E3700A6A63B /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3C101182BAF4E3700A6A63B /* ContentView.swift */; };
@@ -40,6 +44,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		D3B2FCFB2BB0FF9800FE717F /* DetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailView.swift; sourceTree = "<group>"; };
+		D3B2FCFD2BB0FFB400FE717F /* StoryRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoryRowView.swift; sourceTree = "<group>"; };
+		D3B2FCFF2BB1003400FE717F /* Types.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Types.swift; sourceTree = "<group>"; };
+		D3B2FD012BB1007A00FE717F /* CommentRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentRow.swift; sourceTree = "<group>"; };
 		D3C1010B2BAF4E3700A6A63B /* HackerPocket.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HackerPocket.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3C101112BAF4E3700A6A63B /* HackerPocket Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "HackerPocket Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3C101162BAF4E3700A6A63B /* HackerPocketApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HackerPocketApp.swift; sourceTree = "<group>"; };
@@ -85,6 +93,10 @@
 				D3C1011A2BAF4E3800A6A63B /* Assets.xcassets */,
 				D3C1011C2BAF4E3800A6A63B /* Preview Content */,
 				D3C101282BAF589100A6A63B /* CommentsView.swift */,
+				D3B2FCFB2BB0FF9800FE717F /* DetailView.swift */,
+				D3B2FCFD2BB0FFB400FE717F /* StoryRowView.swift */,
+				D3B2FCFF2BB1003400FE717F /* Types.swift */,
+				D3B2FD012BB1007A00FE717F /* CommentRow.swift */,
 			);
 			path = "HackerPocket Watch App";
 			sourceTree = "<group>";
@@ -196,7 +208,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				D3C101192BAF4E3700A6A63B /* ContentView.swift in Sources */,
+				D3B2FCFC2BB0FF9800FE717F /* DetailView.swift in Sources */,
 				D3C101172BAF4E3700A6A63B /* HackerPocketApp.swift in Sources */,
+				D3B2FD002BB1003400FE717F /* Types.swift in Sources */,
+				D3B2FCFE2BB0FFB400FE717F /* StoryRowView.swift in Sources */,
+				D3B2FD022BB1007A00FE717F /* CommentRow.swift in Sources */,
 				D3C101292BAF589100A6A63B /* CommentsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -352,7 +368,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 10.4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.1;
 			};
 			name = Debug;
 		};
@@ -383,7 +399,7 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				VALIDATE_PRODUCT = YES;
-				WATCHOS_DEPLOYMENT_TARGET = 10.4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.1;
 			};
 			name = Release;
 		};
