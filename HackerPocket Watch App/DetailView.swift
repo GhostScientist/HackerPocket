@@ -67,7 +67,11 @@ struct DetailView: View {
                         }
                     }
                     
-                    Text("News Type: \(story.type)")
+                    ShareLink(item: story.url!) {
+                        Label("Share", systemImage: "square.and.arrow.up")
+                    }.buttonBorderShape(.roundedRectangle(radius: 10))
+                    
+                    Text("News Type: \(story.type.capitalized)")
                         .font(.footnote)
                 } else {
                     Text("Loading story details...")

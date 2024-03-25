@@ -16,7 +16,7 @@ struct CommentsView: View {
             VStack(alignment: .leading, spacing: 5) {
                 Text(comment.by)
                     .font(.headline)
-                Text(comment.textWithoutTags.decodingUnicodeCharacters)
+                Text(comment.textWithoutTags.unescape().decodingUnicodeCharacters)
                     .font(.footnote)
                     .lineLimit(4)
                     .truncationMode(.tail)
@@ -49,5 +49,22 @@ struct CommentsView: View {
 
 extension String {
     var decodingUnicodeCharacters: String { applyingTransform(.init("Hex-Any"), reverse: false) ?? "" }
+}
+
+extension String {
+    func unescape() -> String {
+        let characters = [
+            "&amp;": "&",
+            "&lt;": "<",
+            "&gt;": ">",
+            "&quot;": "\"",
+            "&apos;": "'"
+        ]
+        var str = self
+        for (escaped, unescaped) in characters {
+            str = str.replacingOccurrences(of: escaped, with: unescaped, options: NSString.CompareOptions.literal, range: nil)
+        }
+        return str
+    }
 }
 
