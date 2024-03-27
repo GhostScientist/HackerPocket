@@ -13,16 +13,7 @@ struct CommentsView: View {
 
     var body: some View {
         List(comments) { comment in
-            VStack(alignment: .leading, spacing: 5) {
-                Text(comment.by)
-                    .font(.headline)
-                Text(comment.textWithoutTags.unescape().decodingUnicodeCharacters)
-                    .font(.footnote)
-                    .lineLimit(4)
-                    .truncationMode(.tail)
-                Text(comment.postedTime)
-                    .font(.caption)
-            }
+            CommentRow(comment: comment)
         }
         .navigationTitle("Comments")
         .onAppear {
