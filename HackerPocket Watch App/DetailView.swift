@@ -35,7 +35,11 @@ struct DetailView: View {
                         .font(.headline)
                     
                     Text(.init(story.postedDetails)).font(.footnote)
-                    Text(.init("Source: *\(story.url!)*")).font(.footnote).lineLimit(2).padding([.top, .bottom], 5)
+                    
+                    if (story.url != nil) {
+                        Text(.init("Source: *\(story.url!)*")).font(.footnote).lineLimit(2).padding([.top, .bottom], 5)
+                    }
+                   
                     
                     if let url = story.url {
                         Button {
@@ -62,12 +66,13 @@ struct DetailView: View {
                             Text("Text:")
                                 .font(.subheadline)
                             
-                            Text(text)
+                            Text(text.textWithoutTags)
                                 .font(.body)
                         }
                     }
                     
-                    ShareLink(item: story.url!) {
+                    let shareUrl: String = story.url ?? "https://news.ycombinator.com/item?id=\(story.id)"
+                    ShareLink(item: shareUrl) {
                         Label("Share", systemImage: "square.and.arrow.up")
                     }.buttonBorderShape(.roundedRectangle(radius: 10))
                     
