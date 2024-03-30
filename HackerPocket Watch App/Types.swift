@@ -79,3 +79,10 @@ struct Comment: Codable, Identifiable {
         }
     }
 }
+
+
+extension String {
+    var textWithoutTags: String {
+        return replacingOccurrences(of: "<[^>]+>", with: " ", options: .regularExpression, range: nil)
+    }
+}
