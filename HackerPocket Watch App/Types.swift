@@ -85,4 +85,21 @@ extension String {
     var textWithoutTags: String {
         return replacingOccurrences(of: "<[^>]+>", with: " ", options: .regularExpression, range: nil)
     }
+    
+    var decodingUnicodeCharacters: String { applyingTransform(.init("Hex-Any"), reverse: false) ?? "" }
+    
+    func unescape() -> String {
+        let characters = [
+            "&amp;": "&",
+            "&lt;": "<",
+            "&gt;": ">",
+            "&quot;": "\"",
+            "&apos;": "'"
+        ]
+        var str = self
+        for (escaped, unescaped) in characters {
+            str = str.replacingOccurrences(of: escaped, with: unescaped, options: NSString.CompareOptions.literal, range: nil)
+        }
+        return str
+    }
 }
