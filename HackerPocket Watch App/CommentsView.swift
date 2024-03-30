@@ -38,7 +38,7 @@ struct CommentsView: View {
         .onAppear {
             fetchComments()
         }
-        .onChange(of: isLoading) { oldValue, newValue in
+        .onChange(of: isLoading) { newValue in
             if !newValue && !showTip && !commentsTipShown {
                 showTip = true
                 commentsTipShown = true
