@@ -9,9 +9,17 @@ import SwiftUI
 
 @main
 struct HackerPocket_Watch_AppApp: App {
+    @StateObject private var authManager = HNAuthManager()
+    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if hasSeenOnboarding {
+                ContentView()
+                    .environmentObject(authManager)
+            } else {
+                OnboardingView(hasSeenOnboarding: $hasSeenOnboarding)
+            }
         }
     }
 }

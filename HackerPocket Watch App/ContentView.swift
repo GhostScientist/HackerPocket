@@ -8,94 +8,102 @@
 import SwiftUI
 
 struct ContentView: View {
-    
+
+    @EnvironmentObject var authManager: HNAuthManager
+
     @State private var storiesRows: [StoryRow] = []
     @State private var isRefreshing = false
-    @State private var rotationDegrees = 0.0
-    @State private var initialFetch = true
-    
+
     private func fetchTopStories() {
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-            let url = URL(string: "https://hacker-news.firebaseio.com/v0/topstories.json")!
-            URLSession.shared.dataTask(with: url) { data, response, error in
-                if let data = data {
-                    if let storyIds = try? JSONDecoder().decode([Int].self, from: data) {
-                        // Process the story IDs and fetch individual story details
-                        storiesRows.removeAll()
-                        let onlyFirst30 = storyIds.prefix(30)
-                        for storyId in onlyFirst30 {
-                            fetchDetailForStory(storyId)
-                        }
-                    }
-                }
-            }.resume()
-            
-            rotationDegrees = 0.0
-            isRefreshing = false
-            initialFetch = false
-        }
-        
-        
-    }
-    
-    private func fetchDetailForStory(_ storyId: Int) {
-        
-        let url = URL(string: "https://hacker-news.firebaseio.com/v0/item/\(storyId).json")!
+        isRefreshing = true
+
+        let url = URL(string: "https://hacker-news.firebaseio.com/v0/topstories.json")!
         URLSession.shared.dataTask(with: url) { data, response, error in
             if let data = data {
-                if let story = try? JSONDecoder().decode(StoryRow.self, from: data) {
-                    storiesRows.append(story)
+                if let storyIds = try? JSONDecoder().decode([Int].self, from: data) {
+                    let first30 = Array(storyIds.prefix(30))
+                    var fetched: [StoryRow] = []
+                    let group = DispatchGroup()
+
+                    for storyId in first30 {
+                        group.enter()
+                        let storyURL = URL(string: "https://hacker-news.firebaseio.com/v0/item/\(storyId).json")!
+                        URLSession.shared.dataTask(with: storyURL) { data, _, _ in
+                            if let data = data,
+                               let story = try? JSONDecoder().decode(StoryRow.self, from: data) {
+                                fetched.append(story)
+                            }
+                            group.leave()
+                        }.resume()
+                    }
+
+                    group.notify(queue: .main) {
+                        storiesRows = fetched
+                        isRefreshing = false
+                    }
+                } else {
+                    DispatchQueue.main.async { isRefreshing = false }
                 }
+            } else {
+                DispatchQueue.main.async { isRefreshing = false }
             }
         }.resume()
     }
-    
+
     var body: some View {
-        NavigationView {
-            ZStack {
-                List(storiesRows, id: \.self) { story in
-                    NavigationLink(destination: DetailView(number: story.id)) {
-                        StoryRowView(story: story)
+        NavigationStack {
+            Group {
+                if isRefreshing && storiesRows.isEmpty {
+                    VStack(spacing: 10) {
+                        ProgressView()
+                        Text("Loading stories...")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                } else {
+                    List(storiesRows, id: \.self) { story in
+                        NavigationLink(value: story) {
+                            StoryRowView(story: story)
+                        }
+                    }
+                    .navigationDestination(for: StoryRow.self) { story in
+                        DetailView(number: story.id)
                     }
                 }
-                .toolbar{
+            }
+            .navigationTitle("Hacker News")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    NavigationLink {
+                        if authManager.isLoggedIn {
+                            AccountView()
+                        } else {
+                            LoginView()
+                        }
+                    } label: {
+                        Image(systemName: authManager.isLoggedIn ? "person.crop.circle.fill.badge.checkmark" : "person.circle")
+                            .foregroundStyle(authManager.isLoggedIn ? .green : .secondary)
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        isRefreshing = true
                         fetchTopStories()
                     } label: {
-                        Image(systemName: "arrow.clockwise.circle.fill")
+                        Image(systemName: "arrow.clockwise")
                     }
-                }
-                .blur(radius: isRefreshing ? 5 : 0) // Apply blur effect when refreshing
-                .scrollDisabled(isRefreshing)
-                .navigationTitle("Hacker News")
-                .animation(Animation.easeOut(duration: 0.3), value: isRefreshing)
-                
-                if isRefreshing {
-                    VStack {
-                        Text("Fetching latest stories...")
-                        Image(systemName: "arrow.circlepath")
-                        
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .rotationEffect(Angle(degrees: rotationDegrees))
-                            .onAppear {
-                                withAnimation(Animation.linear(duration: 0.5).repeatForever(autoreverses: false)) {
-                                    rotationDegrees = -360
-                                }
-                            }
-                    }
+                    .disabled(isRefreshing)
                 }
             }
         }
         .onAppear {
-            fetchTopStories()
+            if storiesRows.isEmpty {
+                fetchTopStories()
+            }
         }
-        
     }
 }
 
 #Preview {
     ContentView()
+        .environmentObject(HNAuthManager())
 }

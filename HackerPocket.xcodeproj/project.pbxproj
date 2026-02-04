@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A1A1A1022CC1000200000002 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A1A1012CC1000100000001 /* OnboardingView.swift */; };
+		A1A1A1042CC1000400000004 /* HNAuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A1A1032CC1000300000003 /* HNAuthManager.swift */; };
+		A1A1A1062CC1000600000006 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A1A1052CC1000500000005 /* LoginView.swift */; };
+		A1A1A1082CC1000800000008 /* ComposeCommentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A1A1072CC1000700000007 /* ComposeCommentView.swift */; };
 		D3B2FCFC2BB0FF9800FE717F /* DetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3B2FCFB2BB0FF9800FE717F /* DetailView.swift */; };
 		D3B2FCFE2BB0FFB400FE717F /* StoryRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3B2FCFD2BB0FFB400FE717F /* StoryRowView.swift */; };
 		D3B2FD002BB1003400FE717F /* Types.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3B2FCFF2BB1003400FE717F /* Types.swift */; };
@@ -44,6 +48,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A1A1A1012CC1000100000001 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		A1A1A1032CC1000300000003 /* HNAuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HNAuthManager.swift; sourceTree = "<group>"; };
+		A1A1A1052CC1000500000005 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		A1A1A1072CC1000700000007 /* ComposeCommentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposeCommentView.swift; sourceTree = "<group>"; };
 		D3B2FCFB2BB0FF9800FE717F /* DetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailView.swift; sourceTree = "<group>"; };
 		D3B2FCFD2BB0FFB400FE717F /* StoryRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoryRowView.swift; sourceTree = "<group>"; };
 		D3B2FCFF2BB1003400FE717F /* Types.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Types.swift; sourceTree = "<group>"; };
@@ -97,6 +105,10 @@
 				D3B2FCFD2BB0FFB400FE717F /* StoryRowView.swift */,
 				D3B2FCFF2BB1003400FE717F /* Types.swift */,
 				D3B2FD012BB1007A00FE717F /* CommentRow.swift */,
+				A1A1A1012CC1000100000001 /* OnboardingView.swift */,
+				A1A1A1032CC1000300000003 /* HNAuthManager.swift */,
+				A1A1A1052CC1000500000005 /* LoginView.swift */,
+				A1A1A1072CC1000700000007 /* ComposeCommentView.swift */,
 			);
 			path = "HackerPocket Watch App";
 			sourceTree = "<group>";
@@ -214,6 +226,10 @@
 				D3B2FCFE2BB0FFB400FE717F /* StoryRowView.swift in Sources */,
 				D3B2FD022BB1007A00FE717F /* CommentRow.swift in Sources */,
 				D3C101292BAF589100A6A63B /* CommentsView.swift in Sources */,
+				A1A1A1022CC1000200000002 /* OnboardingView.swift in Sources */,
+				A1A1A1042CC1000400000004 /* HNAuthManager.swift in Sources */,
+				A1A1A1062CC1000600000006 /* LoginView.swift in Sources */,
+				A1A1A1082CC1000800000008 /* ComposeCommentView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -348,7 +364,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_ASSET_PATHS = "\"HackerPocket Watch App/Preview Content\"";
 				DEVELOPMENT_TEAM = ZU78LZES28;
 				ENABLE_PREVIEWS = YES;
@@ -359,7 +375,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.dakotakim.HackerPocket.watchkitapp;
 				PRODUCT_NAME = HackerWatch;
 				SDKROOT = watchos;
@@ -367,7 +383,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 9.0;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
 			};
 			name = Debug;
 		};
@@ -377,7 +393,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_ASSET_PATHS = "\"HackerPocket Watch App/Preview Content\"";
 				DEVELOPMENT_TEAM = ZU78LZES28;
 				ENABLE_PREVIEWS = YES;
@@ -388,7 +404,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.dakotakim.HackerPocket.watchkitapp;
 				PRODUCT_NAME = HackerWatch;
 				SDKROOT = watchos;
@@ -397,7 +413,7 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				VALIDATE_PRODUCT = YES;
-				WATCHOS_DEPLOYMENT_TARGET = 9.0;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
 			};
 			name = Release;
 		};
@@ -406,10 +422,10 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = ZU78LZES28;
 				INFOPLIST_KEY_CFBundleDisplayName = HackerPocket;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.dakotakim.HackerPocket;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -422,10 +438,10 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = ZU78LZES28;
 				INFOPLIST_KEY_CFBundleDisplayName = HackerPocket;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.dakotakim.HackerPocket;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;

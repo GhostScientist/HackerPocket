@@ -8,12 +8,14 @@
 import SwiftUI
 import AuthenticationServices
 
-
 struct DetailView: View {
     let number: Int
-    
+
+    @EnvironmentObject var authManager: HNAuthManager
+
     @State private var story: Story?
-    
+    @State private var webSession: ASWebAuthenticationSession?
+
     func fetchDetailsForStory() {
         let url = URL(string: "https://hacker-news.firebaseio.com/v0/item/\(number).json")!
         URLSession.shared.dataTask(with: url) { data, response, error in
@@ -26,65 +28,104 @@ struct DetailView: View {
             }
         }.resume()
     }
-    
+
+    private func openURL(_ urlString: String) {
+        guard let url = URL(string: urlString) else { return }
+        let session = ASWebAuthenticationSession(url: url, callbackURLScheme: "hackerpocket") { _, _ in
+            // Browser dismissed - no action needed
+        }
+        session.prefersEphemeralWebBrowserSession = true
+        webSession = session // Retain the session
+        session.start()
+    }
+
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading) {
+            VStack(alignment: .leading, spacing: 10) {
                 if let story = story {
+                    // Title
                     Text(story.title)
                         .font(.headline)
-                    
-                    Text(.init(story.postedDetails)).font(.footnote)
-                    
-                    if (story.url != nil) {
-                        Text(.init("Source: *\(story.url!)*")).font(.footnote).lineLimit(2).padding([.top, .bottom], 5)
-                    }
-                   
-                    
+
+                    // Metadata
+                    Text(.init(story.postedDetails))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+
+                    // Source URL display
                     if let url = story.url {
-                        Button {
-                            guard let url = URL(string: url) else { return }
-                            let session = ASWebAuthenticationSession(url: url, callbackURLScheme: "") { _,_ in
-                            }
-                            session.prefersEphemeralWebBrowserSession = true
-                            session.start()
-                        } label: {
-                            Text("View Source")
-                                .font(.subheadline)
-                                .foregroundColor(.orange)
-                        }.buttonBorderShape(.roundedRectangle(radius: 10))
-                    }
-                    
-                    NavigationLink(destination: CommentsView(commentIds: story.kids!)) {
-                        Text("View Comments")
-                            .font(.subheadline)
-                            .foregroundColor(.orange)
-                    }.buttonBorderShape(.roundedRectangle(radius: 10))
-                    
-                    if let text = story.text {
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text("Text:")
-                                .font(.subheadline)
-                            
-                            Text(text.textWithoutTags)
-                                .font(.body)
+                        if let host = URL(string: url)?.host {
+                            Text(host)
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
                         }
                     }
-                    
-                    let shareUrl: String = story.url ?? "https://news.ycombinator.com/item?id=\(story.id)"
-                    ShareLink(item: shareUrl) {
-                        Label("Share", systemImage: "square.and.arrow.up")
-                    }.buttonBorderShape(.roundedRectangle(radius: 10))
-                    
-                    Text("News Type: \(story.type.capitalized)")
-                        .font(.footnote)
+
+                    Divider()
+
+                    // Action buttons
+                    VStack(spacing: 8) {
+                        if story.url != nil {
+                            Button {
+                                openURL(story.url!)
+                            } label: {
+                                Label("Read Article", systemImage: "safari")
+                                    .frame(maxWidth: .infinity)
+                                    .font(.caption)
+                            }
+                            .tint(.orange)
+                        }
+
+                        if let kids = story.kids, !kids.isEmpty {
+                            NavigationLink {
+                                CommentsView(commentIds: kids, storyId: story.id)
+                            } label: {
+                                Label("\(story.descendants) Comments", systemImage: "bubble.left.and.bubble.right")
+                                    .frame(maxWidth: .infinity)
+                                    .font(.caption)
+                            }
+                            .tint(.blue)
+                        }
+
+                        let shareUrl: String = story.url ?? "https://news.ycombinator.com/item?id=\(story.id)"
+                        ShareLink(item: shareUrl) {
+                            Label("Share", systemImage: "square.and.arrow.up")
+                                .frame(maxWidth: .infinity)
+                                .font(.caption)
+                        }
+                        .tint(.gray)
+
+                        // Open on HN
+                        Button {
+                            openURL("https://news.ycombinator.com/item?id=\(story.id)")
+                        } label: {
+                            Label("View on HN", systemImage: "globe")
+                                .frame(maxWidth: .infinity)
+                                .font(.caption)
+                        }
+                        .tint(.orange.opacity(0.7))
+                    }
+
+                    // Story text content (for Ask HN, Show HN, etc.)
+                    if let text = story.text, !text.isEmpty {
+                        Divider()
+                        Text(text.htmlToPlainText())
+                            .font(.caption2)
+                    }
+
                 } else {
-                    Text("Loading story details...")
+                    VStack(spacing: 8) {
+                        ProgressView()
+                        Text("Loading story...")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
                 }
             }
             .padding()
         }
-        .navigationTitle("Story Details")
+        .navigationTitle("Story")
         .onAppear {
             fetchDetailsForStory()
         }
@@ -92,6 +133,8 @@ struct DetailView: View {
 }
 
 #Preview {
-    DetailView(number: 39810320)
+    NavigationStack {
+        DetailView(number: 39810320)
+            .environmentObject(HNAuthManager())
+    }
 }
-

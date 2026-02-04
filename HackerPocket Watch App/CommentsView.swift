@@ -7,64 +7,69 @@
 
 import SwiftUI
 
-struct CustomTipView: View {
-    var body: some View {
-        HStack {
-            Image(systemName: "info.circle")
-                .foregroundColor(.blue)
-            Text("Tap on a comment to expand it.")
-                .font(.caption)
-        }
-        .padding(8)
-        .background(Color(.lightGray))
-        .cornerRadius(8)
-        .shadow(radius: 4)
-    }
-}
-
 struct CommentsView: View {
     let commentIds: [Int]
+    let storyId: Int
+
+    @EnvironmentObject var authManager: HNAuthManager
+
     @State private var comments: [Comment] = []
     @State private var isLoading = true
-    @State private var showTip = false
-    
-    @AppStorage("commentsTipShown") private var commentsTipShown = false
-    
+    @State private var replyTarget: Comment?
+
     var body: some View {
-        List(comments) { comment in
-            CommentRow(comment: comment)
+        Group {
+            if isLoading {
+                VStack(spacing: 8) {
+                    ProgressView()
+                    Text("Loading comments...")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            } else if comments.isEmpty {
+                VStack(spacing: 8) {
+                    Image(systemName: "bubble.left.and.bubble.right")
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
+                    Text("No comments yet")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                List(comments) { comment in
+                    CommentRow(comment: comment) {
+                        replyTarget = comment
+                    }
+                    .listRowInsets(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8))
+                }
+            }
         }
         .navigationTitle("Comments")
+        .toolbar {
+            if authManager.isLoggedIn {
+                ToolbarItem(placement: .bottomBar) {
+                    NavigationLink {
+                        ComposeCommentView(parentId: storyId, parentAuthor: nil)
+                    } label: {
+                        Image(systemName: "square.and.pencil")
+                    }
+                }
+            }
+        }
+        .sheet(item: $replyTarget) { comment in
+            NavigationStack {
+                ComposeCommentView(parentId: comment.id, parentAuthor: comment.by)
+            }
+        }
         .onAppear {
             fetchComments()
         }
-        .onChange(of: isLoading) { newValue in
-            if !newValue && !showTip && !commentsTipShown {
-                showTip = true
-                commentsTipShown = true
-            }
-        }
-        .overlay(
-            VStack {
-                if showTip {
-                    CustomTipView()
-                        .padding(.top, 8)
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                        .onTapGesture {
-                            withAnimation {
-                                showTip = false
-                            }
-                        }
-                }
-                Spacer()
-            }
-        )
     }
-    
+
     func fetchComments() {
         isLoading = true
         var fetchedComments: [Comment] = []
-        
+
         let group = DispatchGroup()
         for commentId in commentIds {
             group.enter()
@@ -78,7 +83,7 @@ struct CommentsView: View {
                 group.leave()
             }.resume()
         }
-        
+
         group.notify(queue: .main) {
             comments = fetchedComments.sorted { $0.time > $1.time }
             isLoading = false
