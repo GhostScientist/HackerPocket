@@ -13,8 +13,11 @@ struct DetailView: View {
 
     @EnvironmentObject var authManager: HNAuthManager
 
+    @AppStorage("hasSeenWebViewTip") private var hasSeenWebViewTip = false
     @State private var story: Story?
     @State private var webSession: ASWebAuthenticationSession?
+    @State private var showWebViewTip = false
+    @State private var pendingURL: String?
 
     func fetchDetailsForStory() {
         let url = URL(string: "https://hacker-news.firebaseio.com/v0/item/\(number).json")!
@@ -67,7 +70,12 @@ struct DetailView: View {
                     VStack(spacing: 8) {
                         if story.url != nil {
                             Button {
-                                openURL(story.url!)
+                                if !hasSeenWebViewTip {
+                                    pendingURL = story.url!
+                                    showWebViewTip = true
+                                } else {
+                                    openURL(story.url!)
+                                }
                             } label: {
                                 Label("Read Article", systemImage: "safari")
                                     .frame(maxWidth: .infinity)
@@ -126,6 +134,24 @@ struct DetailView: View {
             .padding()
         }
         .navigationTitle("Story")
+        .alert("Quick Tip", isPresented: $showWebViewTip) {
+            Button("Got it") {
+                hasSeenWebViewTip = true
+                if let url = pendingURL {
+                    openURL(url)
+                    pendingURL = nil
+                }
+            }
+        } message: {
+            Text("If a site doesn't load correctly, tap the URL bar, switch to Reader Mode, then back to Web View to reload the page.")
+        }
+        .userActivity("NSUserActivityTypeBrowsingWeb", isActive: story?.url != nil) { activity in
+            if let urlString = story?.url, let url = URL(string: urlString) {
+                activity.webpageURL = url
+                activity.isEligibleForHandoff = true
+                activity.title = story?.title
+            }
+        }
         .onAppear {
             fetchDetailsForStory()
         }

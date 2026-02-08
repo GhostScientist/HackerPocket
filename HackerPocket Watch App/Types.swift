@@ -30,22 +30,49 @@ struct StoryRow: Codable, Hashable {
     let title: String
     let score: Int
     let kids: [Int]
+    let descendants: Int
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, score, kids, descendants
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title)
+        score = try container.decode(Int.self, forKey: .score)
+        kids = try container.decodeIfPresent([Int].self, forKey: .kids) ?? []
+        descendants = try container.decodeIfPresent(Int.self, forKey: .descendants) ?? 0
+    }
+
+    init(id: Int, title: String, score: Int, kids: [Int], descendants: Int = 0) {
+        self.id = id
+        self.title = title
+        self.score = score
+        self.kids = kids
+        self.descendants = descendants
+    }
 }
 
-struct Comment: Codable, Identifiable {
+struct Comment: Codable, Identifiable, Hashable {
     let id: Int
     let by: String
     let text: String
     let time: Int
     let type: String
+    let kids: [Int]?
+
+    init(id: Int, by: String, text: String, time: Int, type: String, kids: [Int]? = nil) {
+        self.id = id
+        self.by = by
+        self.text = text
+        self.time = time
+        self.type = type
+        self.kids = kids
+    }
 
     var formattedText: String {
         return text.htmlToPlainText()
-    }
-
-    // Keep legacy accessor for compatibility
-    var textWithoutTags: String {
-        return formattedText
     }
 
     var postedTime: String {
@@ -180,16 +207,4 @@ extension String {
         return result
     }
 
-    // Legacy accessors
-    var textWithoutTags: String {
-        return htmlToPlainText()
-    }
-
-    var decodingUnicodeCharacters: String {
-        applyingTransform(.init("Hex-Any"), reverse: false) ?? ""
-    }
-
-    func unescape() -> String {
-        return decodeHTMLEntities()
-    }
 }

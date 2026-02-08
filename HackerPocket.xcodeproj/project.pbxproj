@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -21,6 +21,12 @@
 		D3C1011B2BAF4E3800A6A63B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D3C1011A2BAF4E3800A6A63B /* Assets.xcassets */; };
 		D3C1011E2BAF4E3800A6A63B /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D3C1011D2BAF4E3800A6A63B /* Preview Assets.xcassets */; };
 		D3C101292BAF589100A6A63B /* CommentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3C101282BAF589100A6A63B /* CommentsView.swift */; };
+		D3DD75212F383C560093AA7A /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DD75202F383C560093AA7A /* WidgetKit.framework */; };
+		D3DD75232F383C560093AA7A /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DD75222F383C560093AA7A /* SwiftUI.framework */; };
+		D3DD75302F383C570093AA7A /* HackerPocketWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D3DD751E2F383C560093AA7A /* HackerPocketWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		D3DD75382F383D7C0093AA7A /* OpenAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3DD75372F383D7C0093AA7A /* OpenAppIntent.swift */; };
+		D3DD753A2F383DD10093AA7A /* QUICK_START.md in Resources */ = {isa = PBXBuildFile; fileRef = D3DD75392F383DD10093AA7A /* QUICK_START.md */; };
+		D3DD753B2F383DF00093AA7A /* OpenAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3DD75372F383D7C0093AA7A /* OpenAppIntent.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -30,6 +36,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = D3C101102BAF4E3700A6A63B;
 			remoteInfo = "HackerPocket Watch App";
+		};
+		D3DD752E2F383C570093AA7A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D3C101052BAF4E3700A6A63B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D3DD751D2F383C560093AA7A;
+			remoteInfo = HackerPocketWidgetExtension;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -43,6 +56,17 @@
 				D3C101122BAF4E3700A6A63B /* HackerWatch.app in Embed Watch Content */,
 			);
 			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3DD75312F383C570093AA7A /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				D3DD75302F383C570093AA7A /* HackerPocketWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -63,13 +87,42 @@
 		D3C1011A2BAF4E3800A6A63B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		D3C1011D2BAF4E3800A6A63B /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		D3C101282BAF589100A6A63B /* CommentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentsView.swift; sourceTree = "<group>"; };
+		D3DD751E2F383C560093AA7A /* HackerPocketWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = HackerPocketWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		D3DD75202F383C560093AA7A /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		D3DD75222F383C560093AA7A /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		D3DD75362F383CF50093AA7A /* HackerPocket-Watch-App-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "HackerPocket-Watch-App-Info.plist"; sourceTree = SOURCE_ROOT; };
+		D3DD75372F383D7C0093AA7A /* OpenAppIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAppIntent.swift; sourceTree = "<group>"; };
+		D3DD75392F383DD10093AA7A /* QUICK_START.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = QUICK_START.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		D3DD75342F383C570093AA7A /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = D3DD751D2F383C560093AA7A /* HackerPocketWidgetExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		D3DD75242F383C560093AA7A /* HackerPocketWidget */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (D3DD75342F383C570093AA7A /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = HackerPocketWidget; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		D3C1010E2BAF4E3700A6A63B /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3DD751B2F383C560093AA7A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3DD75232F383C560093AA7A /* SwiftUI.framework in Frameworks */,
+				D3DD75212F383C560093AA7A /* WidgetKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -80,6 +133,8 @@
 			isa = PBXGroup;
 			children = (
 				D3C101152BAF4E3700A6A63B /* HackerPocket Watch App */,
+				D3DD75242F383C560093AA7A /* HackerPocketWidget */,
+				D3DD751F2F383C560093AA7A /* Frameworks */,
 				D3C1010C2BAF4E3700A6A63B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -89,6 +144,7 @@
 			children = (
 				D3C1010B2BAF4E3700A6A63B /* HackerPocket.app */,
 				D3C101112BAF4E3700A6A63B /* HackerWatch.app */,
+				D3DD751E2F383C560093AA7A /* HackerPocketWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -96,6 +152,7 @@
 		D3C101152BAF4E3700A6A63B /* HackerPocket Watch App */ = {
 			isa = PBXGroup;
 			children = (
+				D3DD75362F383CF50093AA7A /* HackerPocket-Watch-App-Info.plist */,
 				D3C101162BAF4E3700A6A63B /* HackerPocketApp.swift */,
 				D3C101182BAF4E3700A6A63B /* ContentView.swift */,
 				D3C1011A2BAF4E3800A6A63B /* Assets.xcassets */,
@@ -109,6 +166,8 @@
 				A1A1A1032CC1000300000003 /* HNAuthManager.swift */,
 				A1A1A1052CC1000500000005 /* LoginView.swift */,
 				A1A1A1072CC1000700000007 /* ComposeCommentView.swift */,
+				D3DD75372F383D7C0093AA7A /* OpenAppIntent.swift */,
+				D3DD75392F383DD10093AA7A /* QUICK_START.md */,
 			);
 			path = "HackerPocket Watch App";
 			sourceTree = "<group>";
@@ -119,6 +178,15 @@
 				D3C1011D2BAF4E3800A6A63B /* Preview Assets.xcassets */,
 			);
 			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		D3DD751F2F383C560093AA7A /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				D3DD75202F383C560093AA7A /* WidgetKit.framework */,
+				D3DD75222F383C560093AA7A /* SwiftUI.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -148,15 +216,39 @@
 				D3C1010D2BAF4E3700A6A63B /* Sources */,
 				D3C1010E2BAF4E3700A6A63B /* Frameworks */,
 				D3C1010F2BAF4E3700A6A63B /* Resources */,
+				D3DD75312F383C570093AA7A /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				D3DD752F2F383C570093AA7A /* PBXTargetDependency */,
 			);
 			name = "HackerPocket Watch App";
 			productName = "HackerPocket Watch App";
 			productReference = D3C101112BAF4E3700A6A63B /* HackerWatch.app */;
 			productType = "com.apple.product-type.application";
+		};
+		D3DD751D2F383C560093AA7A /* HackerPocketWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D3DD75352F383C570093AA7A /* Build configuration list for PBXNativeTarget "HackerPocketWidgetExtension" */;
+			buildPhases = (
+				D3DD751A2F383C560093AA7A /* Sources */,
+				D3DD751B2F383C560093AA7A /* Frameworks */,
+				D3DD751C2F383C560093AA7A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				D3DD75242F383C560093AA7A /* HackerPocketWidget */,
+			);
+			name = HackerPocketWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = HackerPocketWidgetExtension;
+			productReference = D3DD751E2F383C560093AA7A /* HackerPocketWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -165,7 +257,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1530;
+				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 1530;
 				TargetAttributes = {
 					D3C1010A2BAF4E3700A6A63B = {
@@ -173,6 +265,9 @@
 					};
 					D3C101102BAF4E3700A6A63B = {
 						CreatedOnToolsVersion = 15.3;
+					};
+					D3DD751D2F383C560093AA7A = {
+						CreatedOnToolsVersion = 26.2;
 					};
 				};
 			};
@@ -191,6 +286,7 @@
 			targets = (
 				D3C1010A2BAF4E3700A6A63B /* HackerPocket */,
 				D3C101102BAF4E3700A6A63B /* HackerPocket Watch App */,
+				D3DD751D2F383C560093AA7A /* HackerPocketWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -209,6 +305,14 @@
 			files = (
 				D3C1011E2BAF4E3800A6A63B /* Preview Assets.xcassets in Resources */,
 				D3C1011B2BAF4E3800A6A63B /* Assets.xcassets in Resources */,
+				D3DD753A2F383DD10093AA7A /* QUICK_START.md in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3DD751C2F383C560093AA7A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -230,6 +334,15 @@
 				A1A1A1042CC1000400000004 /* HNAuthManager.swift in Sources */,
 				A1A1A1062CC1000600000006 /* LoginView.swift in Sources */,
 				A1A1A1082CC1000800000008 /* ComposeCommentView.swift in Sources */,
+				D3DD75382F383D7C0093AA7A /* OpenAppIntent.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3DD751A2F383C560093AA7A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3DD753B2F383DF00093AA7A /* OpenAppIntent.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -240,6 +353,11 @@
 			isa = PBXTargetDependency;
 			target = D3C101102BAF4E3700A6A63B /* HackerPocket Watch App */;
 			targetProxy = D3C101132BAF4E3700A6A63B /* PBXContainerItemProxy */;
+		};
+		D3DD752F2F383C570093AA7A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D3DD751D2F383C560093AA7A /* HackerPocketWidgetExtension */;
+			targetProxy = D3DD752E2F383C570093AA7A /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -369,6 +487,7 @@
 				DEVELOPMENT_TEAM = ZU78LZES28;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "HackerPocket-Watch-App-Info.plist";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKWatchOnly = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -383,7 +502,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
 			};
 			name = Debug;
 		};
@@ -398,6 +517,7 @@
 				DEVELOPMENT_TEAM = ZU78LZES28;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "HackerPocket-Watch-App-Info.plist";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKWatchOnly = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -413,7 +533,7 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				VALIDATE_PRODUCT = YES;
-				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
 			};
 			name = Release;
 		};
@@ -450,6 +570,73 @@
 			};
 			name = Release;
 		};
+		D3DD75322F383C570093AA7A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ZU78LZES28;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = HackerPocketWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = HackerPocketWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dakotakim.HackerPocket.watchkitapp.HackerPocketWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		D3DD75332F383C570093AA7A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ZU78LZES28;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = HackerPocketWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = HackerPocketWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dakotakim.HackerPocket.watchkitapp.HackerPocketWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -476,6 +663,15 @@
 			buildConfigurations = (
 				D3C101262BAF4E3800A6A63B /* Debug */,
 				D3C101272BAF4E3800A6A63B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D3DD75352F383C570093AA7A /* Build configuration list for PBXNativeTarget "HackerPocketWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3DD75322F383C570093AA7A /* Debug */,
+				D3DD75332F383C570093AA7A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

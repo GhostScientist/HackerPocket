@@ -23,7 +23,7 @@ struct StoryRowView: View {
                     .font(.caption2)
                     .foregroundStyle(.orange)
 
-                Label("\(story.kids.count)", systemImage: "bubble.left.and.bubble.right")
+                Label("\(story.descendants)", systemImage: "bubble.left.and.bubble.right")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
 
@@ -35,5 +35,5 @@ struct StoryRowView: View {
 }
 
 #Preview {
-    StoryRowView(story: StoryRow(id: 1, title: "Show HN: A really interesting project that does something cool", score: 123, kids: [2, 3, 4, 5]))
+    StoryRowView(story: StoryRow(id: 1, title: "Show HN: A really interesting project that does something cool", score: 123, kids: [2, 3, 4, 5], descendants: 42))
 }

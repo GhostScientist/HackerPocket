@@ -10,6 +10,7 @@ import SwiftUI
 struct CommentRow: View {
     var comment: Comment
     var onReply: (() -> Void)?
+    var onViewReplies: (() -> Void)?
 
     @State private var isExpanded: Bool = false
 
@@ -41,19 +42,37 @@ struct CommentRow: View {
                     .foregroundStyle(.tertiary)
             }
 
-            // Reply button when expanded
-            if isExpanded, let onReply = onReply {
-                Button {
-                    onReply()
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "arrowshape.turn.up.left.fill")
-                        Text("Reply")
+            // Action buttons when expanded
+            if isExpanded {
+                HStack(spacing: 12) {
+                    if let kids = comment.kids, !kids.isEmpty {
+                        Button {
+                            onViewReplies?()
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "text.bubble")
+                                Text(kids.count == 1 ? "1 reply" : "\(kids.count) replies")
+                            }
+                            .font(.caption2)
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.teal)
                     }
-                    .font(.caption2)
+
+                    if let onReply = onReply {
+                        Button {
+                            onReply()
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "arrowshape.turn.up.left.fill")
+                                Text("Reply")
+                            }
+                            .font(.caption2)
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.blue)
+                    }
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(.blue)
             }
         }
         .padding(.vertical, 4)
@@ -75,6 +94,7 @@ struct CommentRow: View {
             time: Int(Date().timeIntervalSince1970) - 3600,
             type: "comment"
         ),
-        onReply: {}
+        onReply: {},
+        onViewReplies: {}
     )
 }

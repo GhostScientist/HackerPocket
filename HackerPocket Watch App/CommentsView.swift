@@ -10,12 +10,14 @@ import SwiftUI
 struct CommentsView: View {
     let commentIds: [Int]
     let storyId: Int
+    var parentComment: Comment? = nil
 
     @EnvironmentObject var authManager: HNAuthManager
 
     @State private var comments: [Comment] = []
     @State private var isLoading = true
     @State private var replyTarget: Comment?
+    @State private var threadTarget: Comment?
 
     var body: some View {
         Group {
@@ -36,20 +38,48 @@ struct CommentsView: View {
                         .foregroundStyle(.secondary)
                 }
             } else {
-                List(comments) { comment in
-                    CommentRow(comment: comment) {
-                        replyTarget = comment
+                List {
+                    if let parent = parentComment {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text(parent.by)
+                                    .font(.caption2)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.orange)
+                                Spacer()
+                                Text(parent.postedTime)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Text(parent.formattedText)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(3)
+                        }
+                        .listRowBackground(Color.orange.opacity(0.1))
+                        .listRowInsets(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8))
                     }
-                    .listRowInsets(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8))
+
+                    ForEach(comments) { comment in
+                        CommentRow(comment: comment, onReply: {
+                            replyTarget = comment
+                        }, onViewReplies: {
+                            threadTarget = comment
+                        })
+                        .listRowInsets(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8))
+                    }
                 }
             }
         }
-        .navigationTitle("Comments")
+        .navigationTitle(parentComment != nil ? "Thread" : "Comments")
+        .navigationDestination(item: $threadTarget) { comment in
+            CommentsView(commentIds: comment.kids ?? [], storyId: storyId, parentComment: comment)
+        }
         .toolbar {
             if authManager.isLoggedIn {
                 ToolbarItem(placement: .bottomBar) {
                     NavigationLink {
-                        ComposeCommentView(parentId: storyId, parentAuthor: nil)
+                        ComposeCommentView(parentId: parentComment?.id ?? storyId, parentAuthor: parentComment?.by)
                     } label: {
                         Image(systemName: "square.and.pencil")
                     }
