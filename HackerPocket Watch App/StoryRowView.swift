@@ -9,29 +9,31 @@ import SwiftUI
 
 struct StoryRowView: View {
     var story: StoryRow
-    
+
     var body: some View {
-        HStack {
-            Text(String(story.title))
-                .font(.footnote)
+        VStack(alignment: .leading, spacing: 6) {
+            Text(story.title)
+                .font(.caption)
+                .fontWeight(.medium)
                 .lineLimit(3)
                 .truncationMode(.tail)
-            Spacer()
-            VStack(alignment: .trailing) {
-                HStack {
-                    Text(String(story.score)).font(.footnote).lineLimit(1).truncationMode(.tail)
-                    Image(systemName: "arrow.up").fontWeight(.bold)
-                }
-                HStack {
-                    Text(String(story.kids.count)).font(.footnote).lineLimit(1).truncationMode(.tail).imageScale(.small)
-                    Image(systemName: "bubble.left.and.bubble.right").fontWeight(.bold).imageScale(.small)
-                }
+
+            HStack(spacing: 12) {
+                Label("\(story.score)", systemImage: "arrow.up")
+                    .font(.caption2)
+                    .foregroundStyle(.orange)
+
+                Label("\(story.descendants)", systemImage: "bubble.left.and.bubble.right")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+
+                Spacer()
             }
-            
         }
+        .padding(.vertical, 2)
     }
 }
 
 #Preview {
-    StoryRowView(story: StoryRow(id: 1, title: "Test Story", score: 123, kids: [2, 3]))
+    StoryRowView(story: StoryRow(id: 1, title: "Show HN: A really interesting project that does something cool", score: 123, kids: [2, 3, 4, 5], descendants: 42))
 }
