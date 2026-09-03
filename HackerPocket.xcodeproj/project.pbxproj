@@ -11,6 +11,9 @@
 		A1A1A1042CC1000400000004 /* HNAuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A1A1032CC1000300000003 /* HNAuthManager.swift */; };
 		A1A1A1062CC1000600000006 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A1A1052CC1000500000005 /* LoginView.swift */; };
 		A1A1A1082CC1000800000008 /* ComposeCommentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A1A1072CC1000700000007 /* ComposeCommentView.swift */; };
+		A1A1A10A2CC100100000000A /* HNService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A1A1092CC1000900000009 /* HNService.swift */; };
+		A1A1A10C2CC100120000000C /* ViewModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A1A10B2CC100110000000B /* ViewModels.swift */; };
+		A1A1A10E2CC100140000000E /* LoadStateViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A1A10D2CC100130000000D /* LoadStateViews.swift */; };
 		D3B2FCFC2BB0FF9800FE717F /* DetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3B2FCFB2BB0FF9800FE717F /* DetailView.swift */; };
 		D3B2FCFE2BB0FFB400FE717F /* StoryRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3B2FCFD2BB0FFB400FE717F /* StoryRowView.swift */; };
 		D3B2FD002BB1003400FE717F /* Types.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3B2FCFF2BB1003400FE717F /* Types.swift */; };
@@ -76,6 +79,9 @@
 		A1A1A1032CC1000300000003 /* HNAuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HNAuthManager.swift; sourceTree = "<group>"; };
 		A1A1A1052CC1000500000005 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		A1A1A1072CC1000700000007 /* ComposeCommentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposeCommentView.swift; sourceTree = "<group>"; };
+		A1A1A1092CC1000900000009 /* HNService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HNService.swift; sourceTree = "<group>"; };
+		A1A1A10B2CC100110000000B /* ViewModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModels.swift; sourceTree = "<group>"; };
+		A1A1A10D2CC100130000000D /* LoadStateViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadStateViews.swift; sourceTree = "<group>"; };
 		D3B2FCFB2BB0FF9800FE717F /* DetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailView.swift; sourceTree = "<group>"; };
 		D3B2FCFD2BB0FFB400FE717F /* StoryRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoryRowView.swift; sourceTree = "<group>"; };
 		D3B2FCFF2BB1003400FE717F /* Types.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Types.swift; sourceTree = "<group>"; };
@@ -162,6 +168,9 @@
 				D3B2FCFD2BB0FFB400FE717F /* StoryRowView.swift */,
 				D3B2FCFF2BB1003400FE717F /* Types.swift */,
 				D3B2FD012BB1007A00FE717F /* CommentRow.swift */,
+				A1A1A10D2CC100130000000D /* LoadStateViews.swift */,
+				A1A1A10B2CC100110000000B /* ViewModels.swift */,
+				A1A1A1092CC1000900000009 /* HNService.swift */,
 				A1A1A1012CC1000100000001 /* OnboardingView.swift */,
 				A1A1A1032CC1000300000003 /* HNAuthManager.swift */,
 				A1A1A1052CC1000500000005 /* LoginView.swift */,
@@ -329,6 +338,9 @@
 				D3B2FD002BB1003400FE717F /* Types.swift in Sources */,
 				D3B2FCFE2BB0FFB400FE717F /* StoryRowView.swift in Sources */,
 				D3B2FD022BB1007A00FE717F /* CommentRow.swift in Sources */,
+				A1A1A10E2CC100140000000E /* LoadStateViews.swift in Sources */,
+				A1A1A10C2CC100120000000C /* ViewModels.swift in Sources */,
+				A1A1A10A2CC100100000000A /* HNService.swift in Sources */,
 				D3C101292BAF589100A6A63B /* CommentsView.swift in Sources */,
 				A1A1A1022CC1000200000002 /* OnboardingView.swift in Sources */,
 				A1A1A1042CC1000400000004 /* HNAuthManager.swift in Sources */,

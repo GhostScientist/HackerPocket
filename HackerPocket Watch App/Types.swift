@@ -7,6 +7,10 @@
 
 import Foundation
 
+/// Only `id` is guaranteed by the HN API. Job posts have no `descendants`,
+/// dead or deleted items have no `by`/`title`, and polls have no `url`, so
+/// every other field decodes defensively — a single missing key used to make
+/// the whole item fail to decode and the screen hang on "Loading…".
 struct Story: Codable {
     let id: Int
     let title: String
@@ -19,13 +23,45 @@ struct Story: Codable {
     let text: String?
     let type: String
 
+    enum CodingKeys: String, CodingKey {
+        case id, title, by, score, time, url, descendants, kids, text, type
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        title = try container.decodeIfPresent(String.self, forKey: .title) ?? "(untitled)"
+        by = try container.decodeIfPresent(String.self, forKey: .by) ?? "unknown"
+        score = try container.decodeIfPresent(Int.self, forKey: .score) ?? 0
+        time = try container.decodeIfPresent(Int.self, forKey: .time) ?? 0
+        url = try container.decodeIfPresent(String.self, forKey: .url)
+        descendants = try container.decodeIfPresent(Int.self, forKey: .descendants) ?? 0
+        kids = try container.decodeIfPresent([Int].self, forKey: .kids)
+        text = try container.decodeIfPresent(String.self, forKey: .text)
+        type = try container.decodeIfPresent(String.self, forKey: .type) ?? "story"
+    }
+
+    init(id: Int, title: String, by: String, score: Int, time: Int, url: String? = nil,
+         descendants: Int = 0, kids: [Int]? = nil, text: String? = nil, type: String = "story") {
+        self.id = id
+        self.title = title
+        self.by = by
+        self.score = score
+        self.time = time
+        self.url = url
+        self.descendants = descendants
+        self.kids = kids
+        self.text = text
+        self.type = type
+    }
+
     var postedDetails: String {
         let timestampText = timeAgoString(from: time)
         return "\(score) points by **\(by)** \(timestampText)"
     }
 }
 
-struct StoryRow: Codable, Hashable {
+struct StoryRow: Codable, Hashable, Identifiable {
     let id: Int
     let title: String
     let score: Int
@@ -39,8 +75,8 @@ struct StoryRow: Codable, Hashable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(Int.self, forKey: .id)
-        title = try container.decode(String.self, forKey: .title)
-        score = try container.decode(Int.self, forKey: .score)
+        title = try container.decodeIfPresent(String.self, forKey: .title) ?? "(untitled)"
+        score = try container.decodeIfPresent(Int.self, forKey: .score) ?? 0
         kids = try container.decodeIfPresent([Int].self, forKey: .kids) ?? []
         descendants = try container.decodeIfPresent(Int.self, forKey: .descendants) ?? 0
     }
@@ -61,14 +97,40 @@ struct Comment: Codable, Identifiable, Hashable {
     let time: Int
     let type: String
     let kids: [Int]?
+    let deleted: Bool
+    let dead: Bool
 
-    init(id: Int, by: String, text: String, time: Int, type: String, kids: [Int]? = nil) {
+    enum CodingKeys: String, CodingKey {
+        case id, by, text, time, type, kids, deleted, dead
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        by = try container.decodeIfPresent(String.self, forKey: .by) ?? "unknown"
+        text = try container.decodeIfPresent(String.self, forKey: .text) ?? ""
+        time = try container.decodeIfPresent(Int.self, forKey: .time) ?? 0
+        type = try container.decodeIfPresent(String.self, forKey: .type) ?? "comment"
+        kids = try container.decodeIfPresent([Int].self, forKey: .kids)
+        deleted = try container.decodeIfPresent(Bool.self, forKey: .deleted) ?? false
+        dead = try container.decodeIfPresent(Bool.self, forKey: .dead) ?? false
+    }
+
+    init(id: Int, by: String, text: String, time: Int, type: String, kids: [Int]? = nil,
+         deleted: Bool = false, dead: Bool = false) {
         self.id = id
         self.by = by
         self.text = text
         self.time = time
         self.type = type
         self.kids = kids
+        self.deleted = deleted
+        self.dead = dead
+    }
+
+    /// Moderated, self-deleted, or empty comments are dropped before display.
+    var isHidden: Bool {
+        deleted || dead || text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     var formattedText: String {
