@@ -16,6 +16,7 @@ final class StoriesViewModel: ObservableObject {
     @Published private(set) var isLoading = false
     @Published private(set) var isLoadingMore = false
     @Published private(set) var error: HNError?
+    @Published private(set) var feed: Feed = .top
 
     private let service: HNService
     private let pageSize = 20
@@ -23,6 +24,14 @@ final class StoriesViewModel: ObservableObject {
     private var rankedIDs: [Int] = []
     private var loadedIDCount = 0
     private var activeTask: Task<Void, Never>?
+
+    /// Bumped every time the feed changes or a refresh starts. A task that
+    /// finishes holding a stale generation throws its results away.
+    ///
+    /// Cancellation alone is not a guarantee here: a request can complete on
+    /// the wire before `cancel()` lands, and we'd rather drop the old feed's
+    /// stories than briefly render them under the new feed's title.
+    private var generation = 0
 
     init(service: HNService = .shared) {
         self.service = service
@@ -36,26 +45,43 @@ final class StoriesViewModel: ObservableObject {
         !stories.isEmpty
     }
 
-    func loadIfNeeded() {
+    func loadIfNeeded(feed: Feed) {
         guard stories.isEmpty, !isLoading else { return }
+        self.feed = feed
+        refresh()
+    }
+
+    func select(_ feed: Feed) {
+        guard feed != self.feed else { return }
+        self.feed = feed
+        rankedIDs = []
+        loadedIDCount = 0
+        stories = []
         refresh()
     }
 
     func refresh() {
         activeTask?.cancel()
+        generation &+= 1
+        let generation = generation
+        let feed = feed
+        // Set synchronously: the task body doesn't run until the next main-actor
+        // hop, and one frame of "no stories" before the spinner looks like a bug.
+        isLoading = true
         activeTask = Task { [weak self] in
-            await self?.performRefresh()
+            await self?.performRefresh(feed: feed, generation: generation)
         }
     }
 
     func loadMore() {
         guard canLoadMore, !isLoading, !isLoadingMore else { return }
+        let generation = generation
         activeTask = Task { [weak self] in
-            await self?.performLoadMore()
+            await self?.performLoadMore(generation: generation)
         }
     }
 
-    private func performRefresh() async {
+    private func performRefresh(feed: Feed, generation: Int) async {
         isLoading = true
         // A refresh cancels any in-flight pagination, so clear its spinner too —
         // the cancelled task bails out before it can reset this itself.
@@ -63,12 +89,14 @@ final class StoriesViewModel: ObservableObject {
         error = nil
 
         do {
-            let ids = try await service.topStoryIDs()
+            let ids = try await service.storyIDs(for: feed)
             try Task.checkCancellation()
+            guard generation == self.generation else { return }
 
             let firstPage = Array(ids.prefix(pageSize))
             let page = try await service.stories(ids: firstPage)
             try Task.checkCancellation()
+            guard generation == self.generation else { return }
 
             rankedIDs = ids
             loadedIDCount = firstPage.count
@@ -78,6 +106,7 @@ final class StoriesViewModel: ObservableObject {
             // A newer request superseded this one; leave state to the winner.
             return
         } catch {
+            guard generation == self.generation else { return }
             // Keep whatever is already on screen and report alongside it.
             self.error = HNError.from(error)
         }
@@ -85,7 +114,7 @@ final class StoriesViewModel: ObservableObject {
         isLoading = false
     }
 
-    private func performLoadMore() async {
+    private func performLoadMore(generation: Int) async {
         isLoadingMore = true
 
         let upperBound = min(loadedIDCount + pageSize, rankedIDs.count)
@@ -94,6 +123,7 @@ final class StoriesViewModel: ObservableObject {
         do {
             let page = try await service.stories(ids: nextPage)
             try Task.checkCancellation()
+            guard generation == self.generation else { return }
 
             loadedIDCount = upperBound
             stories.append(contentsOf: page)
@@ -101,10 +131,84 @@ final class StoriesViewModel: ObservableObject {
         } catch is CancellationError {
             return
         } catch {
+            guard generation == self.generation else { return }
             self.error = HNError.from(error)
         }
 
         isLoadingMore = false
+    }
+}
+
+// MARK: - Search
+
+@MainActor
+final class SearchViewModel: ObservableObject {
+
+    @Published private(set) var results: [StoryRow] = []
+    @Published private(set) var isSearching = false
+    @Published private(set) var error: HNError?
+    @Published private(set) var recentSearches: [String] = []
+
+    /// The query behind whatever is currently on screen. `nil` until the first
+    /// search completes, which is what separates "no results" from "not asked yet".
+    @Published private(set) var completedQuery: String?
+
+    private let service: HNSearchService
+    private var activeTask: Task<Void, Never>?
+
+    private static let recentSearchesKey = "recentSearches"
+    private static let maxRecentSearches = 5
+
+    init(service: HNSearchService = .shared) {
+        self.service = service
+        recentSearches = UserDefaults.standard.stringArray(forKey: Self.recentSearchesKey) ?? []
+    }
+
+    func search(_ query: String) {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        activeTask?.cancel()
+        isSearching = true
+        activeTask = Task { [weak self] in
+            await self?.performSearch(trimmed)
+        }
+    }
+
+    func clearRecentSearches() {
+        recentSearches = []
+        UserDefaults.standard.removeObject(forKey: Self.recentSearchesKey)
+    }
+
+    private func performSearch(_ query: String) async {
+        isSearching = true
+        error = nil
+
+        do {
+            let hits = try await service.stories(matching: query)
+            try Task.checkCancellation()
+
+            results = hits
+            completedQuery = query
+            error = nil
+            rememberSearch(query)
+        } catch is CancellationError {
+            return
+        } catch {
+            results = []
+            completedQuery = query
+            self.error = HNError.from(error)
+        }
+
+        isSearching = false
+    }
+
+    /// Typing on a watch is expensive, so successful queries are kept for reuse.
+    private func rememberSearch(_ query: String) {
+        var updated = recentSearches.filter { $0.caseInsensitiveCompare(query) != .orderedSame }
+        updated.insert(query, at: 0)
+        recentSearches = Array(updated.prefix(Self.maxRecentSearches))
+        UserDefaults.standard.set(recentSearches, forKey: Self.recentSearchesKey)
     }
 }
 

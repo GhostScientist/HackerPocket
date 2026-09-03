@@ -12,6 +12,8 @@ struct ContentView: View {
     @EnvironmentObject var authManager: HNAuthManager
     @StateObject private var viewModel = StoriesViewModel()
 
+    @AppStorage("selectedFeed") private var feed: Feed = .top
+
     var body: some View {
         NavigationStack {
             Group {
@@ -21,13 +23,16 @@ struct ContentView: View {
                     ErrorStateView(error: error) {
                         viewModel.refresh()
                     }
-                } else if !viewModel.hasContent {
-                    ErrorStateView(error: .notFound)
                 } else {
                     storyList
                 }
             }
-            .navigationTitle("Hacker News")
+            .navigationTitle(feed.displayName)
+            // Declared once for the whole stack so pushed screens (search)
+            // share the same destination instead of redeclaring it.
+            .navigationDestination(for: StoryRow.self) { story in
+                DetailView(number: story.id)
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     NavigationLink {
@@ -52,18 +57,46 @@ struct ContentView: View {
             }
         }
         .onAppear {
-            viewModel.loadIfNeeded()
+            viewModel.loadIfNeeded(feed: feed)
+        }
+        .onChange(of: feed) { _, newFeed in
+            viewModel.select(newFeed)
         }
     }
 
     private var storyList: some View {
         List {
+            // `.navigationLink` style pushes a full-screen, Crown-scrollable
+            // list of feeds — the standard watchOS affordance, and it leaves the
+            // Crown free for scrolling stories on this screen.
+            Picker("Feed", selection: $feed) {
+                ForEach(Feed.allCases) { option in
+                    Label(option.displayName, systemImage: option.symbolName)
+                        .tag(option)
+                }
+            }
+            .pickerStyle(.navigationLink)
+            .font(.caption2)
+
+            NavigationLink {
+                SearchView()
+            } label: {
+                Label("Search", systemImage: "magnifyingglass")
+                    .font(.caption2)
+            }
+
             // Content is already on screen, so a failed refresh degrades to a
             // banner rather than replacing everything with an error screen.
             if let error = viewModel.error {
                 InlineErrorView(error: error) {
                     viewModel.refresh()
                 }
+            }
+
+            if !viewModel.hasContent && !viewModel.isLoading {
+                Text("No stories in \(feed.displayName) right now.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
             }
 
             ForEach(viewModel.stories) { story in
@@ -77,9 +110,6 @@ struct ContentView: View {
                     viewModel.loadMore()
                 }
             }
-        }
-        .navigationDestination(for: StoryRow.self) { story in
-            DetailView(number: story.id)
         }
     }
 }

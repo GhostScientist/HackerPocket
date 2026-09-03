@@ -112,7 +112,9 @@ struct DetailView: View {
                 NavigationLink {
                     CommentsView(commentIds: kids, storyId: story.id)
                 } label: {
-                    Label("\(story.descendants) Comments", systemImage: "bubble.left.and.bubble.right")
+                    // Job posts and some dead items carry no `descendants` even
+                    // when they have kids, so never render "0 Comments".
+                    Label(story.commentButtonTitle, systemImage: "bubble.left.and.bubble.right")
                         .frame(maxWidth: .infinity)
                         .font(.caption)
                 }

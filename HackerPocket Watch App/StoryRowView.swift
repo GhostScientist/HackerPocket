@@ -23,9 +23,13 @@ struct StoryRowView: View {
                     .font(.caption2)
                     .foregroundStyle(.orange)
 
-                Label("\(story.descendants)", systemImage: "bubble.left.and.bubble.right")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                // Jobs posts have no comments; an always-visible "0" bubble
+                // just reads as a broken row.
+                if story.descendants > 0 || !story.kids.isEmpty {
+                    Label("\(max(story.descendants, story.kids.count))", systemImage: "bubble.left.and.bubble.right")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
 
                 Spacer()
             }
