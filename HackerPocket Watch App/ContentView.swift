@@ -10,65 +10,21 @@ import SwiftUI
 struct ContentView: View {
 
     @EnvironmentObject var authManager: HNAuthManager
-
-    @State private var storiesRows: [StoryRow] = []
-    @State private var isRefreshing = false
-
-    private func fetchTopStories() {
-        isRefreshing = true
-
-        let url = URL(string: "https://hacker-news.firebaseio.com/v0/topstories.json")!
-        URLSession.shared.dataTask(with: url) { data, response, error in
-            if let data = data {
-                if let storyIds = try? JSONDecoder().decode([Int].self, from: data) {
-                    let first30 = Array(storyIds.prefix(30))
-                    var fetched: [StoryRow] = []
-                    let group = DispatchGroup()
-
-                    for storyId in first30 {
-                        group.enter()
-                        let storyURL = URL(string: "https://hacker-news.firebaseio.com/v0/item/\(storyId).json")!
-                        URLSession.shared.dataTask(with: storyURL) { data, _, _ in
-                            if let data = data,
-                               let story = try? JSONDecoder().decode(StoryRow.self, from: data) {
-                                fetched.append(story)
-                            }
-                            group.leave()
-                        }.resume()
-                    }
-
-                    group.notify(queue: .main) {
-                        storiesRows = fetched
-                        isRefreshing = false
-                    }
-                } else {
-                    DispatchQueue.main.async { isRefreshing = false }
-                }
-            } else {
-                DispatchQueue.main.async { isRefreshing = false }
-            }
-        }.resume()
-    }
+    @StateObject private var viewModel = StoriesViewModel()
 
     var body: some View {
         NavigationStack {
             Group {
-                if isRefreshing && storiesRows.isEmpty {
-                    VStack(spacing: 10) {
-                        ProgressView()
-                        Text("Loading stories...")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
+                if viewModel.isLoading && !viewModel.hasContent {
+                    LoadingStateView(message: "Loading stories...")
+                } else if let error = viewModel.error, !viewModel.hasContent {
+                    ErrorStateView(error: error) {
+                        viewModel.refresh()
                     }
+                } else if !viewModel.hasContent {
+                    ErrorStateView(error: .notFound)
                 } else {
-                    List(storiesRows, id: \.self) { story in
-                        NavigationLink(value: story) {
-                            StoryRowView(story: story)
-                        }
-                    }
-                    .navigationDestination(for: StoryRow.self) { story in
-                        DetailView(number: story.id)
-                    }
+                    storyList
                 }
             }
             .navigationTitle("Hacker News")
@@ -87,18 +43,43 @@ struct ContentView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        fetchTopStories()
+                        viewModel.refresh()
                     } label: {
                         Image(systemName: "arrow.clockwise")
                     }
-                    .disabled(isRefreshing)
+                    .disabled(viewModel.isLoading)
                 }
             }
         }
         .onAppear {
-            if storiesRows.isEmpty {
-                fetchTopStories()
+            viewModel.loadIfNeeded()
+        }
+    }
+
+    private var storyList: some View {
+        List {
+            // Content is already on screen, so a failed refresh degrades to a
+            // banner rather than replacing everything with an error screen.
+            if let error = viewModel.error {
+                InlineErrorView(error: error) {
+                    viewModel.refresh()
+                }
             }
+
+            ForEach(viewModel.stories) { story in
+                NavigationLink(value: story) {
+                    StoryRowView(story: story)
+                }
+            }
+
+            if viewModel.canLoadMore {
+                LoadMoreRow(title: "Load More", isLoading: viewModel.isLoadingMore) {
+                    viewModel.loadMore()
+                }
+            }
+        }
+        .navigationDestination(for: StoryRow.self) { story in
+            DetailView(number: story.id)
         }
     }
 }

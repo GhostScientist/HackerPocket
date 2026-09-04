@@ -13,22 +13,20 @@ struct CommentsView: View {
     var parentComment: Comment? = nil
 
     @EnvironmentObject var authManager: HNAuthManager
+    @StateObject private var viewModel = CommentsViewModel()
 
-    @State private var comments: [Comment] = []
-    @State private var isLoading = true
     @State private var replyTarget: Comment?
     @State private var threadTarget: Comment?
 
     var body: some View {
         Group {
-            if isLoading {
-                VStack(spacing: 8) {
-                    ProgressView()
-                    Text("Loading comments...")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+            if viewModel.isLoading && viewModel.comments.isEmpty {
+                LoadingStateView(message: "Loading comments...")
+            } else if let error = viewModel.error, viewModel.comments.isEmpty {
+                ErrorStateView(error: error) {
+                    viewModel.load(ids: commentIds)
                 }
-            } else if comments.isEmpty {
+            } else if viewModel.comments.isEmpty {
                 VStack(spacing: 8) {
                     Image(systemName: "bubble.left.and.bubble.right")
                         .font(.title3)
@@ -38,37 +36,7 @@ struct CommentsView: View {
                         .foregroundStyle(.secondary)
                 }
             } else {
-                List {
-                    if let parent = parentComment {
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Text(parent.by)
-                                    .font(.caption2)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(.orange)
-                                Spacer()
-                                Text(parent.postedTime)
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Text(parent.formattedText)
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(3)
-                        }
-                        .listRowBackground(Color.orange.opacity(0.1))
-                        .listRowInsets(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8))
-                    }
-
-                    ForEach(comments) { comment in
-                        CommentRow(comment: comment, onReply: {
-                            replyTarget = comment
-                        }, onViewReplies: {
-                            threadTarget = comment
-                        })
-                        .listRowInsets(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8))
-                    }
-                }
+                commentList
             }
         }
         .navigationTitle(parentComment != nil ? "Thread" : "Comments")
@@ -92,31 +60,58 @@ struct CommentsView: View {
             }
         }
         .onAppear {
-            fetchComments()
+            viewModel.loadIfNeeded(ids: commentIds)
         }
     }
 
-    func fetchComments() {
-        isLoading = true
-        var fetchedComments: [Comment] = []
-
-        let group = DispatchGroup()
-        for commentId in commentIds {
-            group.enter()
-            let url = URL(string: "https://hacker-news.firebaseio.com/v0/item/\(commentId).json")!
-            URLSession.shared.dataTask(with: url) { data, response, error in
-                if let data = data {
-                    if let comment = try? JSONDecoder().decode(Comment.self, from: data) {
-                        fetchedComments.append(comment)
+    private var commentList: some View {
+        List {
+            if let parent = parentComment {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text(parent.by)
+                            .font(.caption2)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.orange)
+                        Spacer()
+                        Text(parent.postedTime)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
                     }
+                    Text(parent.formattedText)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(3)
                 }
-                group.leave()
-            }.resume()
-        }
+                .listRowBackground(Color.orange.opacity(0.1))
+                .listRowInsets(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8))
+            }
 
-        group.notify(queue: .main) {
-            comments = fetchedComments.sorted { $0.time > $1.time }
-            isLoading = false
+            if let error = viewModel.error {
+                InlineErrorView(error: error) {
+                    viewModel.loadMore()
+                }
+                .listRowInsets(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8))
+            }
+
+            ForEach(viewModel.comments) { comment in
+                CommentRow(comment: comment, onReply: {
+                    replyTarget = comment
+                }, onViewReplies: {
+                    threadTarget = comment
+                })
+                .listRowInsets(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8))
+            }
+
+            if viewModel.canLoadMore && viewModel.error == nil {
+                LoadMoreRow(
+                    title: "Load \(min(viewModel.remainingCount, 20)) More",
+                    isLoading: viewModel.isLoadingMore
+                ) {
+                    viewModel.loadMore()
+                }
+                .listRowInsets(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8))
+            }
         }
     }
 }
