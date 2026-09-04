@@ -51,6 +51,8 @@ struct CommentsView: View {
                     } label: {
                         Image(systemName: "square.and.pencil")
                     }
+                    .accessibilityLabel("Compose Comment")
+                    .accessibilityHint("Write a new comment.")
                 }
             }
         }

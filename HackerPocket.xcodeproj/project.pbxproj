@@ -38,6 +38,7 @@
 		B4B4B4022CC4010200000302 /* StoryState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4B4B4012CC4010100000301 /* StoryState.swift */; };
 		B4B4B4042CC4010400000304 /* SavedStoriesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4B4B4032CC4010300000303 /* SavedStoriesView.swift */; };
 		B4B4B4062CC4010600000306 /* ReadHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4B4B4052CC4010500000305 /* ReadHistoryView.swift */; };
+		C5C5C5022CC5010200000402 /* WatchHaptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5C5C5012CC5010100000401 /* WatchHaptics.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -115,6 +116,7 @@
 		B4B4B4012CC4010100000301 /* StoryState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoryState.swift; sourceTree = "<group>"; };
 		B4B4B4032CC4010300000303 /* SavedStoriesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedStoriesView.swift; sourceTree = "<group>"; };
 		B4B4B4052CC4010500000305 /* ReadHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadHistoryView.swift; sourceTree = "<group>"; };
+		C5C5C5012CC5010100000401 /* WatchHaptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchHaptics.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -200,6 +202,7 @@
 				A1A1A1052CC1000500000005 /* LoginView.swift */,
 				A1A1A1072CC1000700000007 /* ComposeCommentView.swift */,
 				D3DD75372F383D7C0093AA7A /* OpenAppIntent.swift */,
+				C5C5C5012CC5010100000401 /* WatchHaptics.swift */,
 				D3DD75392F383DD10093AA7A /* QUICK_START.md */,
 			);
 			path = "HackerPocket Watch App";
@@ -379,6 +382,7 @@
 				A1A1A1062CC1000600000006 /* LoginView.swift in Sources */,
 				A1A1A1082CC1000800000008 /* ComposeCommentView.swift in Sources */,
 				D3DD75382F383D7C0093AA7A /* OpenAppIntent.swift in Sources */,
+				C5C5C5022CC5010200000402 /* WatchHaptics.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

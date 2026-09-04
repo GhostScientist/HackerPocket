@@ -14,9 +14,10 @@ struct ContentView: View {
     @StateObject private var viewModel = StoriesViewModel()
 
     @AppStorage("selectedFeed") private var feed: Feed = .top
+    @State private var navigationPath = NavigationPath()
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             Group {
                 if viewModel.isLoading && !viewModel.hasContent {
                     LoadingStateView(message: "Loading stories...")
@@ -34,6 +35,9 @@ struct ContentView: View {
             .navigationDestination(for: StoryRow.self) { story in
                 DetailView(number: story.id)
             }
+            .navigationDestination(for: Int.self) { storyID in
+                DetailView(number: storyID)
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     NavigationLink {
@@ -46,6 +50,8 @@ struct ContentView: View {
                         Image(systemName: authManager.isLoggedIn ? "person.crop.circle.fill.badge.checkmark" : "person.circle")
                             .foregroundStyle(authManager.isLoggedIn ? .green : .secondary)
                     }
+                    .accessibilityLabel(authManager.isLoggedIn ? "Account, signed in" : "Account")
+                    .accessibilityHint("View account settings.")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack {
@@ -54,11 +60,15 @@ struct ContentView: View {
                         } label: {
                             Image(systemName: "bookmark")
                         }
+                        .accessibilityLabel("Saved Stories")
+                        .accessibilityHint("View saved stories.")
                         Button {
                             viewModel.refresh()
                         } label: {
                             Image(systemName: "arrow.clockwise")
                         }
+                        .accessibilityLabel("Refresh Stories")
+                        .accessibilityHint("Refresh the current feed.")
                     }
                     .disabled(viewModel.isLoading)
                 }
@@ -70,6 +80,14 @@ struct ContentView: View {
         }
         .onChange(of: feed) { _, newFeed in
             viewModel.select(newFeed)
+        }
+        .onOpenURL { url in
+            guard url.scheme?.lowercased() == "hackerpocket",
+                  url.host?.lowercased() == "story",
+                  let storyID = url.pathComponents.dropFirst().first.flatMap(Int.init) else {
+                return
+            }
+            navigationPath.append(storyID)
         }
     }
 

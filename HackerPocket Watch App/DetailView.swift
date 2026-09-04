@@ -15,21 +15,29 @@ struct DetailView: View {
     @EnvironmentObject var storyState: StoryStateModel
     @StateObject private var viewModel = StoryDetailViewModel()
 
-    @AppStorage("hasSeenWebViewTip") private var hasSeenWebViewTip = false
     @State private var webSession: ASWebAuthenticationSession?
-    @State private var showWebViewTip = false
-    @State private var pendingURL: String?
+    @State private var handoffActivity: NSUserActivity?
 
     var fallback: Story? = nil
 
-    private func openURL(_ urlString: String) {
+    private func openBrowser(_ urlString: String) {
         guard let url = URL(string: urlString) else { return }
+        // watchOS has no system Safari, so use its supported web presentation session.
         let session = ASWebAuthenticationSession(url: url, callbackURLScheme: "hackerpocket") { _, _ in
-            // Browser dismissed - no action needed
         }
         session.prefersEphemeralWebBrowserSession = true
-        webSession = session // Retain the session
+        webSession = session
         session.start()
+    }
+
+    private func activateHandoff(urlString: String, title: String) {
+        guard let url = URL(string: urlString) else { return }
+        let activity = NSUserActivity(activityType: NSUserActivityTypeBrowsingWeb)
+        activity.webpageURL = url
+        activity.isEligibleForHandoff = true
+        activity.title = title
+        activity.becomeCurrent()
+        handoffActivity = activity
     }
 
     var body: some View {
@@ -48,23 +56,15 @@ struct DetailView: View {
             .padding()
         }
         .navigationTitle("Story")
-        .alert("Quick Tip", isPresented: $showWebViewTip) {
-            Button("Got it") {
-                hasSeenWebViewTip = true
-                if let url = pendingURL {
-                    openURL(url)
-                    pendingURL = nil
-                }
-            }
-        } message: {
-            Text("If a site doesn't load correctly, tap the URL bar, switch to Reader Mode, then back to Web View to reload the page.")
-        }
         .userActivity("NSUserActivityTypeBrowsingWeb", isActive: viewModel.story?.url != nil) { activity in
             if let urlString = viewModel.story?.url, let url = URL(string: urlString) {
                 activity.webpageURL = url
                 activity.isEligibleForHandoff = true
                 activity.title = viewModel.story?.title
             }
+        }
+        .onDisappear {
+            handoffActivity?.resignCurrent()
         }
         .onAppear {
             storyState.loadIfNeeded()
@@ -99,18 +99,29 @@ struct DetailView: View {
         VStack(spacing: 8) {
             if let storyURL = story.url {
                 Button {
-                    if !hasSeenWebViewTip {
-                        pendingURL = storyURL
-                        showWebViewTip = true
-                    } else {
-                        openURL(storyURL)
-                    }
+                    activateHandoff(urlString: storyURL, title: story.title)
+                } label: {
+                    Label("Open on iPhone", systemImage: "iphone")
+                        .frame(maxWidth: .infinity)
+                        .font(.caption)
+                }
+                .tint(.orange)
+                .accessibilityHint("Continue this article on your iPhone with Handoff.")
+
+                Text("Handoff is available on your iPhone.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+
+                Button {
+                    openBrowser(storyURL)
                 } label: {
                     Label("Read Article", systemImage: "safari")
                         .frame(maxWidth: .infinity)
                         .font(.caption)
                 }
-                .tint(.orange)
+                .tint(.orange.opacity(0.8))
+                .accessibilityHint("Read this article in the watchOS web view.")
             }
 
             if let kids = story.kids, !kids.isEmpty {
@@ -136,7 +147,7 @@ struct DetailView: View {
 
             // Open on HN
             Button {
-                openURL("https://news.ycombinator.com/item?id=\(story.id)")
+                openBrowser("https://news.ycombinator.com/item?id=\(story.id)")
             } label: {
                 Label("View on HN", systemImage: "globe")
                     .frame(maxWidth: .infinity)

@@ -38,69 +38,58 @@ struct CommentRow: View {
                 .lineLimit(isExpanded ? nil : 4)
                 .truncationMode(.tail)
                 .fixedSize(horizontal: false, vertical: isExpanded)
-
-            // Expand indicator when collapsed
-            if !isExpanded {
-                Text("Tap to expand")
-                    .font(.system(size: 9))
-                    .foregroundStyle(.tertiary)
-            }
-
-            // Action buttons when expanded
-            if isExpanded {
-                HStack(spacing: 12) {
-                    if let kids = comment.kids, !kids.isEmpty {
-                        Button {
-                            onViewReplies?()
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "text.bubble")
-                                Text(kids.count == 1 ? "1 reply" : "\(kids.count) replies")
-                            }
-                            .font(.caption2)
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(.teal)
-                    }
-
-                    if let onReply = onReply {
-                        Button {
-                            onReply()
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "arrowshape.turn.up.left.fill")
-                                Text("Reply")
-                            }
-                            .font(.caption2)
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(.blue)
-                    }
-
-                    if authManager.isLoggedIn && !storyState.hasVoted(comment.id) {
-                        Button {
-                            upvote()
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "arrow.up")
-                                Text("Upvote")
-                            }
-                            .font(.caption2)
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(.orange)
-                        .disabled(voteInFlight)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        isExpanded.toggle()
                     }
                 }
+                .accessibilityHint("Double tap to expand or collapse.")
+
+            HStack(spacing: 8) {
+                if let kids = comment.kids, !kids.isEmpty, let onViewReplies {
+                    Button {
+                        onViewReplies()
+                    } label: {
+                        Label(kids.count == 1 ? "1 Reply" : "\(kids.count) Replies", systemImage: "text.bubble")
+                            .font(.caption2)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.teal)
+                    .accessibilityLabel("View Replies")
+                    .accessibilityHint("Open this comment's replies.")
+                }
+
+                if let onReply {
+                    Button {
+                        onReply()
+                    } label: {
+                        Label("Reply", systemImage: "arrowshape.turn.up.left.fill")
+                            .font(.caption2)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.blue)
+                    .accessibilityHint("Reply to this comment.")
+                }
+
+                if authManager.isLoggedIn && !storyState.hasVoted(comment.id) {
+                    Button {
+                        upvote()
+                    } label: {
+                        Label("Upvote", systemImage: "arrow.up")
+                            .font(.caption2)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.orange)
+                    .disabled(voteInFlight)
+                    .accessibilityHint("Upvote this comment.")
+                }
+
+                Spacer(minLength: 0)
             }
+            .frame(minHeight: 24)
         }
         .padding(.vertical, 4)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isExpanded.toggle()
-            }
-        }
         .alert(
             "Upvote failed",
             isPresented: Binding(
@@ -121,9 +110,11 @@ struct CommentRow: View {
         Task {
             do {
                 try await authManager.upvote(itemID: comment.id)
+                WatchHaptics.upvote()
             } catch {
                 storyState.unmarkVoted(comment.id)
                 voteError = error.localizedDescription
+                WatchHaptics.failure()
             }
             voteInFlight = false
         }

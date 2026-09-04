@@ -65,7 +65,7 @@ final class StoriesViewModel: ObservableObject {
     func loadIfNeeded(feed: Feed) {
         guard stories.isEmpty, !isLoading else { return }
         self.feed = feed
-        refresh()
+        refresh(haptic: false)
     }
 
     func select(_ feed: Feed) {
@@ -76,10 +76,14 @@ final class StoriesViewModel: ObservableObject {
         loadedIDCount = 0
         stories = []
         lastUpdated = nil
-        refresh()
+        refresh(haptic: false)
     }
 
     func refresh() {
+        refresh(haptic: true)
+    }
+
+    private func refresh(haptic: Bool) {
         activeTask?.cancel()
         generation &+= 1
         let generation = generation
@@ -89,7 +93,7 @@ final class StoriesViewModel: ObservableObject {
         isLoading = !hasContent
         isRevalidating = hasContent
         activeTask = Task { [weak self] in
-            await self?.performRefresh(feed: feed, generation: generation)
+            await self?.performRefresh(feed: feed, generation: generation, haptic: haptic)
         }
     }
 
@@ -101,7 +105,7 @@ final class StoriesViewModel: ObservableObject {
         }
     }
 
-    private func performRefresh(feed: Feed, generation: Int) async {
+    private func performRefresh(feed: Feed, generation: Int, haptic: Bool) async {
         // A refresh cancels any in-flight pagination, so clear its spinner too —
         // the cancelled task bails out before it can reset this itself.
         isLoadingMore = false
@@ -145,6 +149,9 @@ final class StoriesViewModel: ObservableObject {
             publishStories()
             lastUpdated = Date()
             error = nil
+            if haptic {
+                WatchHaptics.success()
+            }
 
             // Arguments are evaluated before the suspension, so a feed switch
             // landing mid-write can't file this feed's rows under another key.
@@ -157,6 +164,9 @@ final class StoriesViewModel: ObservableObject {
             guard generation == self.generation else { return }
             // Keep whatever is already on screen and report alongside it.
             self.error = HNError.from(error)
+            if haptic {
+                WatchHaptics.failure()
+            }
         }
 
         isLoading = false
@@ -308,18 +318,18 @@ final class StoryDetailViewModel: ObservableObject {
 
     func loadIfNeeded(id: Int, fallback: Story? = nil) {
         guard story == nil, !isLoading else { return }
-        load(id: id, fallback: fallback)
+        load(id: id, fallback: fallback, haptic: false)
     }
 
-    func load(id: Int, fallback: Story? = nil) {
+    func load(id: Int, fallback: Story? = nil, haptic: Bool = true) {
         activeTask?.cancel()
         isLoading = story == nil
         activeTask = Task { [weak self] in
-            await self?.performLoad(id: id, fallback: fallback)
+            await self?.performLoad(id: id, fallback: fallback, haptic: haptic)
         }
     }
 
-    private func performLoad(id: Int, fallback: Story?) async {
+    private func performLoad(id: Int, fallback: Story?, haptic: Bool) async {
         error = nil
 
         if story == nil {
@@ -332,6 +342,9 @@ final class StoryDetailViewModel: ObservableObject {
             try Task.checkCancellation()
             story = fresh
             await cache.store(story: fresh)
+            if haptic {
+                WatchHaptics.success()
+            }
         } catch is CancellationError {
             return
         } catch {
@@ -339,6 +352,9 @@ final class StoryDetailViewModel: ObservableObject {
             // when there is genuinely nothing to show.
             if story == nil {
                 self.error = HNError.from(error)
+            }
+            if haptic {
+                WatchHaptics.failure()
             }
         }
 
@@ -459,6 +475,9 @@ final class CommentsViewModel: ObservableObject {
             loadedIDCount = upperBound
             publishComments()
             error = nil
+            if isInitial {
+                WatchHaptics.success()
+            }
 
             await cache.store(
                 parentID: parentID,
@@ -470,6 +489,7 @@ final class CommentsViewModel: ObservableObject {
             return
         } catch {
             self.error = HNError.from(error)
+            WatchHaptics.failure()
         }
 
         isLoading = false

@@ -30,24 +30,30 @@ struct HackerPocketWidget: Widget {
 struct HackerPocketEntry: TimelineEntry {
     let date: Date
     let topStoryTitle: String?
+    let storyID: Int?
     let storyCount: Int
 }
 
 struct HackerPocketTimelineProvider: TimelineProvider {
     func placeholder(in context: Context) -> HackerPocketEntry {
-        HackerPocketEntry(date: Date(), topStoryTitle: "Top Story", storyCount: 0)
+        HackerPocketEntry(date: Date(), topStoryTitle: "Top Story", storyID: nil, storyCount: 0)
     }
     
     func getSnapshot(in context: Context, completion: @escaping (HackerPocketEntry) -> Void) {
-        let entry = HackerPocketEntry(date: Date(), topStoryTitle: "Hacker News", storyCount: 0)
+        let entry = HackerPocketEntry(date: Date(), topStoryTitle: "Hacker News", storyID: nil, storyCount: 0)
         completion(entry)
     }
     
     func getTimeline(in context: Context, completion: @escaping (Timeline<HackerPocketEntry>) -> Void) {
         // Fetch the latest story count or title if desired
-        fetchTopStory { title, count in
+        fetchTopStory { title, storyID, count in
             let currentDate = Date()
-            let entry = HackerPocketEntry(date: currentDate, topStoryTitle: title, storyCount: count)
+            let entry = HackerPocketEntry(
+                date: currentDate,
+                topStoryTitle: title,
+                storyID: storyID,
+                storyCount: count
+            )
             
             // Update every hour
             let nextUpdate = Calendar.current.date(byAdding: .hour, value: 1, to: currentDate)!
@@ -56,14 +62,14 @@ struct HackerPocketTimelineProvider: TimelineProvider {
         }
     }
     
-    private func fetchTopStory(completion: @escaping (String?, Int) -> Void) {
+    private func fetchTopStory(completion: @escaping (String?, Int?, Int) -> Void) {
         let url = URL(string: "https://hacker-news.firebaseio.com/v0/topstories.json")!
         
         URLSession.shared.dataTask(with: url) { data, response, error in
             guard let data = data,
                   let storyIds = try? JSONDecoder().decode([Int].self, from: data),
                   let firstId = storyIds.first else {
-                completion(nil, 0)
+                completion(nil, nil, 0)
                 return
             }
             
@@ -72,15 +78,16 @@ struct HackerPocketTimelineProvider: TimelineProvider {
             URLSession.shared.dataTask(with: storyURL) { data, _, _ in
                 if let data = data,
                    let story = try? JSONDecoder().decode(StoryData.self, from: data) {
-                    completion(story.title, storyIds.count)
+                    completion(story.title, story.id, storyIds.count)
                 } else {
-                    completion(nil, storyIds.count)
+                    completion(nil, firstId, storyIds.count)
                 }
             }.resume()
         }.resume()
     }
     
     struct StoryData: Codable {
+        let id: Int
         let title: String
     }
 }
@@ -118,31 +125,32 @@ struct HackerPocketWidgetView: View {
     }
     
     private var rectangularView: some View {
-        Button(intent: OpenAppIntent()) {
-            HStack(spacing: 6) {
-                // Y icon
-                Text("HN")
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
-                    .foregroundStyle(.orange)
-                
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Hacker News")
-                        .font(.system(size: 14, weight: .semibold))
-                    if let title = entry.topStoryTitle {
-                        Text(title)
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
-                    } else {
-                        Text("Top Stories")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                    }
+        HStack(spacing: 6) {
+            // Y icon
+            Text("HN")
+                .font(.system(size: 24, weight: .bold, design: .rounded))
+                .foregroundStyle(.orange)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Hacker News")
+                    .font(.system(size: 14, weight: .semibold))
+                if let title = entry.topStoryTitle {
+                    Text(title)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                } else {
+                    Text("Top Stories")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .widgetURL(
+            entry.storyID.flatMap { URL(string: "hackerpocket://story/\($0)") }
+                ?? URL(string: "hackerpocket://")
+        )
     }
     
     private var cornerView: some View {
@@ -172,23 +180,27 @@ struct HackerPocketWidgetView: View {
 #Preview(as: .accessoryCircular) {
     HackerPocketWidget()
 } timeline: {
-    HackerPocketEntry(date: Date(), topStoryTitle: "Sample Story", storyCount: 500)
+    HackerPocketEntry(date: Date(), topStoryTitle: "Sample Story", storyID: 1, storyCount: 500)
 }
 
 #Preview(as: .accessoryRectangular) {
     HackerPocketWidget()
 } timeline: {
-    HackerPocketEntry(date: Date(), topStoryTitle: "Interesting Tech Article About New Developments", storyCount: 500)
+    HackerPocketEntry(
+        date: Date(),
+        topStoryTitle: "Interesting Tech Article About New Developments",
+        storyID: 1,
+        storyCount: 500
+    )
 }
 #Preview(as: .accessoryCorner) {
     HackerPocketWidget()
 } timeline: {
-    HackerPocketEntry(date: Date(), topStoryTitle: "Sample Story", storyCount: 500)
+    HackerPocketEntry(date: Date(), topStoryTitle: "Sample Story", storyID: nil, storyCount: 500)
 }
 
 #Preview(as: .accessoryInline) {
     HackerPocketWidget()
 } timeline: {
-    HackerPocketEntry(date: Date(), topStoryTitle: "Sample Story", storyCount: 500)
+    HackerPocketEntry(date: Date(), topStoryTitle: "Sample Story", storyID: nil, storyCount: 500)
 }
-

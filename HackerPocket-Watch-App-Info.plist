@@ -5,14 +5,12 @@
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.dakotakim.HackerPocket.watch</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>hackerpocket</string>
 			</array>
-		</dict>
-		<dict>
-			<key>CFBundleURLName</key>
-			<string>com.hackerpocket.url</string>
 		</dict>
 	</array>
 </dict>

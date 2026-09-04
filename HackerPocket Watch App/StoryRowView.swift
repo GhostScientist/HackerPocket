@@ -61,6 +61,12 @@ struct StoryRowView: View {
                 )
             }
             .tint(.blue)
+            .accessibilityLabel(storyState.isSaved(story.id) ? "Unsave Story" : "Save Story")
+            .accessibilityHint(
+                storyState.isSaved(story.id)
+                    ? "Remove this story from saved stories."
+                    : "Save this story for later."
+            )
 
             if authManager.isLoggedIn && !storyState.hasVoted(story.id) {
                 Button {
@@ -70,6 +76,8 @@ struct StoryRowView: View {
                 }
                 .tint(.orange)
                 .disabled(voteInFlight)
+                .accessibilityLabel("Upvote Story")
+                .accessibilityHint("Upvote this story.")
             }
         }
         .onChange(of: story.score) { _, newScore in
@@ -99,10 +107,12 @@ struct StoryRowView: View {
         Task {
             do {
                 try await authManager.upvote(itemID: story.id)
+                WatchHaptics.upvote()
             } catch {
                 displayedScore = max(displayedScore - 1, 0)
                 storyState.unmarkVoted(story.id)
                 voteError = error.localizedDescription
+                WatchHaptics.failure()
             }
             voteInFlight = false
         }
