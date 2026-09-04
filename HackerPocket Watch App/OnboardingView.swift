@@ -28,7 +28,7 @@ struct OnboardingView: View {
             VStack(spacing: 10) {
                 FeatureRow(icon: "list.bullet", text: "Browse top stories")
                 FeatureRow(icon: "bubble.left.and.bubble.right", text: "Read & post comments")
-                FeatureRow(icon: "safari", text: "View articles in-app")
+                FeatureRow(icon: "iphone", text: "Read articles on watch or iPhone")
                 FeatureRow(icon: "square.and.arrow.up", text: "Share with friends")
             }
             .padding(.horizontal, 4)
@@ -40,7 +40,7 @@ struct OnboardingView: View {
                     .foregroundStyle(.blue)
                 Text("Quick Tips")
                     .font(.headline)
-                Text("Tap comments to expand them. Swipe left for more options.")
+                Text("Tap comment text to expand it. Swipe left for more options.")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

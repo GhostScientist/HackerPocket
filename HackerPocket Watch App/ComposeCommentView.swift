@@ -69,9 +69,11 @@ struct ComposeCommentView: View {
             isSubmitting = false
             if success {
                 didPost = true
+                WatchHaptics.success()
                 dismiss()
             } else {
                 errorMessage = error ?? "Failed to post comment."
+                WatchHaptics.failure()
             }
         }
     }

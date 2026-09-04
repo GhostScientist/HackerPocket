@@ -24,7 +24,7 @@ struct CommentsView: View {
                 LoadingStateView(message: "Loading comments...")
             } else if let error = viewModel.error, viewModel.comments.isEmpty {
                 ErrorStateView(error: error) {
-                    viewModel.load(ids: commentIds)
+                    viewModel.load(ids: commentIds, parentID: cacheKey)
                 }
             } else if viewModel.comments.isEmpty {
                 VStack(spacing: 8) {
@@ -51,6 +51,8 @@ struct CommentsView: View {
                     } label: {
                         Image(systemName: "square.and.pencil")
                     }
+                    .accessibilityLabel("Compose Comment")
+                    .accessibilityHint("Write a new comment.")
                 }
             }
         }
@@ -60,8 +62,14 @@ struct CommentsView: View {
             }
         }
         .onAppear {
-            viewModel.loadIfNeeded(ids: commentIds)
+            viewModel.loadIfNeeded(ids: commentIds, parentID: cacheKey)
         }
+    }
+
+    /// Threads recurse through this same view, so the cache has to be keyed on
+    /// the item the replies actually hang off rather than the root story.
+    private var cacheKey: Int {
+        parentComment?.id ?? storyId
     }
 
     private var commentList: some View {

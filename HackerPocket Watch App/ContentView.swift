@@ -10,10 +10,14 @@ import SwiftUI
 struct ContentView: View {
 
     @EnvironmentObject var authManager: HNAuthManager
+    @EnvironmentObject var storyState: StoryStateModel
     @StateObject private var viewModel = StoriesViewModel()
 
+    @AppStorage("selectedFeed") private var feed: Feed = .top
+    @State private var navigationPath = NavigationPath()
+
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             Group {
                 if viewModel.isLoading && !viewModel.hasContent {
                     LoadingStateView(message: "Loading stories...")
@@ -21,13 +25,19 @@ struct ContentView: View {
                     ErrorStateView(error: error) {
                         viewModel.refresh()
                     }
-                } else if !viewModel.hasContent {
-                    ErrorStateView(error: .notFound)
                 } else {
                     storyList
                 }
             }
-            .navigationTitle("Hacker News")
+            .navigationTitle(feed.displayName)
+            // Declared once for the whole stack so pushed screens (search)
+            // share the same destination instead of redeclaring it.
+            .navigationDestination(for: StoryRow.self) { story in
+                DetailView(number: story.id)
+            }
+            .navigationDestination(for: Int.self) { storyID in
+                DetailView(number: storyID)
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     NavigationLink {
@@ -40,30 +50,89 @@ struct ContentView: View {
                         Image(systemName: authManager.isLoggedIn ? "person.crop.circle.fill.badge.checkmark" : "person.circle")
                             .foregroundStyle(authManager.isLoggedIn ? .green : .secondary)
                     }
+                    .accessibilityLabel(authManager.isLoggedIn ? "Account, signed in" : "Account")
+                    .accessibilityHint("View account settings.")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        viewModel.refresh()
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
+                    HStack {
+                        NavigationLink {
+                            SavedStoriesView()
+                        } label: {
+                            Image(systemName: "bookmark")
+                        }
+                        .accessibilityLabel("Saved Stories")
+                        .accessibilityHint("View saved stories.")
+                        Button {
+                            viewModel.refresh()
+                        } label: {
+                            Image(systemName: "arrow.clockwise")
+                        }
+                        .accessibilityLabel("Refresh Stories")
+                        .accessibilityHint("Refresh the current feed.")
                     }
                     .disabled(viewModel.isLoading)
                 }
             }
         }
         .onAppear {
-            viewModel.loadIfNeeded()
+            storyState.loadIfNeeded()
+            viewModel.loadIfNeeded(feed: feed)
+        }
+        .onChange(of: feed) { _, newFeed in
+            viewModel.select(newFeed)
+        }
+        .onOpenURL { url in
+            guard url.scheme?.lowercased() == "hackerpocket",
+                  url.host?.lowercased() == "story",
+                  let storyID = url.pathComponents.dropFirst().first.flatMap(Int.init) else {
+                return
+            }
+            navigationPath.append(storyID)
         }
     }
 
     private var storyList: some View {
         List {
+            // `.navigationLink` style pushes a full-screen, Crown-scrollable
+            // list of feeds — the standard watchOS affordance, and it leaves the
+            // Crown free for scrolling stories on this screen.
+            Picker("Feed", selection: $feed) {
+                ForEach(Feed.allCases) { option in
+                    Label(option.displayName, systemImage: option.symbolName)
+                        .tag(option)
+                }
+            }
+            .pickerStyle(.navigationLink)
+            .font(.caption2)
+
+            NavigationLink {
+                SearchView()
+            } label: {
+                Label("Search", systemImage: "magnifyingglass")
+                    .font(.caption2)
+            }
+
+            NavigationLink {
+                ReadHistoryView()
+            } label: {
+                Label("Read History", systemImage: "checkmark.circle")
+                    .font(.caption2)
+            }
+
             // Content is already on screen, so a failed refresh degrades to a
             // banner rather than replacing everything with an error screen.
             if let error = viewModel.error {
                 InlineErrorView(error: error) {
                     viewModel.refresh()
                 }
+            } else if let updated = viewModel.lastUpdated {
+                CacheStatusRow(updatedAt: updated, isRefreshing: viewModel.isRevalidating)
+            }
+
+            if !viewModel.hasContent && !viewModel.isLoading {
+                Text("No stories in \(feed.displayName) right now.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
             }
 
             ForEach(viewModel.stories) { story in
@@ -78,13 +147,11 @@ struct ContentView: View {
                 }
             }
         }
-        .navigationDestination(for: StoryRow.self) { story in
-            DetailView(number: story.id)
-        }
     }
 }
 
 #Preview {
     ContentView()
         .environmentObject(HNAuthManager())
+        .environmentObject(StoryStateModel())
 }

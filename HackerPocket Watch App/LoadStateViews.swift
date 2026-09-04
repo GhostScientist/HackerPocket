@@ -78,6 +78,40 @@ struct InlineErrorView: View {
     }
 }
 
+/// How old the rows on screen are, plus whether a revalidation is running
+/// behind them. Cached content renders before the network answers, so without
+/// this the list can silently be hours stale.
+struct CacheStatusRow: View {
+    let updatedAt: Date
+    let isRefreshing: Bool
+
+    var body: some View {
+        HStack(spacing: 4) {
+            if isRefreshing {
+                ProgressView()
+                    .controlSize(.mini)
+            } else {
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(.system(size: 9))
+                    .foregroundStyle(.secondary)
+            }
+
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+
+            Spacer()
+        }
+        .listRowBackground(Color.clear)
+    }
+
+    private var label: String {
+        isRefreshing
+            ? "Updating…"
+            : "Updated \(timeAgoString(from: Int(updatedAt.timeIntervalSince1970)))"
+    }
+}
+
 struct LoadMoreRow: View {
     let title: String
     let isLoading: Bool

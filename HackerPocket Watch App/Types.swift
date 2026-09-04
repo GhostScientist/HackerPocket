@@ -59,6 +59,13 @@ struct Story: Codable {
         let timestampText = timeAgoString(from: time)
         return "\(score) points by **\(by)** \(timestampText)"
     }
+
+    /// Job posts have no `descendants` and often no comments at all, so the
+    /// button falls back to an unnumbered label rather than claiming zero.
+    var commentButtonTitle: String {
+        let count = max(descendants, kids?.count ?? 0)
+        return count > 0 ? "\(count) Comments" : "Comments"
+    }
 }
 
 struct StoryRow: Codable, Hashable, Identifiable {
@@ -87,6 +94,17 @@ struct StoryRow: Codable, Hashable, Identifiable {
         self.score = score
         self.kids = kids
         self.descendants = descendants
+    }
+
+    var asStory: Story {
+        Story(
+            id: id,
+            title: title,
+            by: "unknown",
+            score: score,
+            time: 0,
+            kids: kids
+        )
     }
 }
 

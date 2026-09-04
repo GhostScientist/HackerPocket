@@ -117,9 +117,10 @@ final class HNService {
 
     // MARK: Public API
 
-    /// Ranked IDs for the front page. HN returns up to 500.
-    func topStoryIDs() async throws -> [Int] {
-        try await fetch([Int].self, path: "topstories.json") ?? []
+    /// Ranked IDs for a feed. Lengths vary wildly — `top` returns up to 500,
+    /// `jobs` often fewer than 30 — so callers must not assume a count.
+    func storyIDs(for feed: Feed) async throws -> [Int] {
+        try await fetch([Int].self, path: feed.path) ?? []
     }
 
     func story(id: Int) async throws -> Story {
