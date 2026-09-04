@@ -7,6 +7,12 @@
 
 import SwiftUI
 
+private enum RootDestination: Hashable {
+    case actions
+    case account
+    case savedStories
+}
+
 struct ContentView: View {
 
     @EnvironmentObject var authManager: HNAuthManager
@@ -38,39 +44,31 @@ struct ContentView: View {
             .navigationDestination(for: Int.self) { storyID in
                 DetailView(number: storyID)
             }
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    NavigationLink {
-                        if authManager.isLoggedIn {
-                            AccountView()
-                        } else {
-                            LoginView()
-                        }
-                    } label: {
-                        Image(systemName: authManager.isLoggedIn ? "person.crop.circle.fill.badge.checkmark" : "person.circle")
-                            .foregroundStyle(authManager.isLoggedIn ? .green : .secondary)
+            .navigationDestination(for: RootDestination.self) { destination in
+                switch destination {
+                case .actions:
+                    RootActionsView(
+                        isLoggedIn: authManager.isLoggedIn,
+                        isRefreshing: viewModel.isLoading,
+                        refresh: viewModel.refresh
+                    )
+                case .account:
+                    if authManager.isLoggedIn {
+                        AccountView()
+                    } else {
+                        LoginView()
                     }
-                    .accessibilityLabel(authManager.isLoggedIn ? "Account, signed in" : "Account")
-                    .accessibilityHint("View account settings.")
+                case .savedStories:
+                    SavedStoriesView()
                 }
+            }
+            .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    HStack {
-                        NavigationLink {
-                            SavedStoriesView()
-                        } label: {
-                            Image(systemName: "bookmark")
-                        }
-                        .accessibilityLabel("Saved Stories")
-                        .accessibilityHint("View saved stories.")
-                        Button {
-                            viewModel.refresh()
-                        } label: {
-                            Image(systemName: "arrow.clockwise")
-                        }
-                        .accessibilityLabel("Refresh Stories")
-                        .accessibilityHint("Refresh the current feed.")
+                    NavigationLink(value: RootDestination.actions) {
+                        Image(systemName: "ellipsis")
                     }
-                    .disabled(viewModel.isLoading)
+                    .accessibilityLabel("More")
+                    .accessibilityHint("Open account, saved story, and refresh actions.")
                 }
             }
         }
@@ -147,6 +145,40 @@ struct ContentView: View {
                 }
             }
         }
+    }
+}
+
+private struct RootActionsView: View {
+    let isLoggedIn: Bool
+    let isRefreshing: Bool
+    let refresh: () -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        List {
+            NavigationLink(value: RootDestination.account) {
+                Label(
+                    isLoggedIn ? "Account" : "Sign In",
+                    systemImage: isLoggedIn
+                        ? "person.crop.circle.fill.badge.checkmark"
+                        : "person.circle"
+                )
+            }
+
+            NavigationLink(value: RootDestination.savedStories) {
+                Label("Saved Stories", systemImage: "bookmark")
+            }
+
+            Button {
+                refresh()
+                dismiss()
+            } label: {
+                Label("Refresh Stories", systemImage: "arrow.clockwise")
+            }
+            .disabled(isRefreshing)
+        }
+        .navigationTitle("More")
     }
 }
 

@@ -20,19 +20,23 @@ struct CommentRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            // Author and time header
-            HStack {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(comment.by)
                     .font(.caption)
                     .fontWeight(.semibold)
                     .foregroundStyle(.orange)
-                Spacer()
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+
+                Spacer(minLength: 4)
+
                 Text(comment.postedTime)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
             }
 
-            // Comment body with proper formatting
             Text(comment.formattedText)
                 .font(.caption2)
                 .lineLimit(isExpanded ? nil : 4)
@@ -51,24 +55,34 @@ struct CommentRow: View {
                     Button {
                         onViewReplies()
                     } label: {
-                        Label(kids.count == 1 ? "1 Reply" : "\(kids.count) Replies", systemImage: "text.bubble")
-                            .font(.caption2)
+                        HStack(spacing: 4) {
+                            Image(systemName: "text.bubble")
+                            Text(kids.count, format: .number)
+                                .monospacedDigit()
+                        }
+                        .font(.caption2)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(.teal)
-                    .accessibilityLabel("View Replies")
+                    .accessibilityLabel(kids.count == 1 ? "View 1 Reply" : "View \(kids.count) Replies")
                     .accessibilityHint("Open this comment's replies.")
                 }
+
+                Spacer(minLength: 4)
 
                 if let onReply {
                     Button {
                         onReply()
                     } label: {
-                        Label("Reply", systemImage: "arrowshape.turn.up.left.fill")
-                            .font(.caption2)
+                        Image(systemName: "arrowshape.turn.up.left.fill")
+                            .font(.caption)
+                            .frame(minWidth: 28, minHeight: 28)
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(.blue)
+                    .accessibilityLabel("Reply")
                     .accessibilityHint("Reply to this comment.")
                 }
 
@@ -76,18 +90,18 @@ struct CommentRow: View {
                     Button {
                         upvote()
                     } label: {
-                        Label("Upvote", systemImage: "arrow.up")
-                            .font(.caption2)
+                        Image(systemName: "arrow.up")
+                            .font(.caption)
+                            .frame(minWidth: 28, minHeight: 28)
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(.orange)
                     .disabled(voteInFlight)
+                    .accessibilityLabel("Upvote")
                     .accessibilityHint("Upvote this comment.")
                 }
-
-                Spacer(minLength: 0)
             }
-            .frame(minHeight: 24)
+            .frame(minHeight: 28)
         }
         .padding(.vertical, 4)
         .alert(
