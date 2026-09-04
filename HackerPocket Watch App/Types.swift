@@ -95,6 +95,17 @@ struct StoryRow: Codable, Hashable, Identifiable {
         self.kids = kids
         self.descendants = descendants
     }
+
+    var asStory: Story {
+        Story(
+            id: id,
+            title: title,
+            by: "unknown",
+            score: score,
+            time: 0,
+            kids: kids
+        )
+    }
 }
 
 struct Comment: Codable, Identifiable, Hashable {

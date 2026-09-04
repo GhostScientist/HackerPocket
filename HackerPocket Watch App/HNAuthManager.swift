@@ -17,10 +17,12 @@ class HNAuthManager: ObservableObject {
 
     private let baseURL = "https://news.ycombinator.com"
     private let keychainService = "com.dakotakim.HackerPocket.hn"
+    private let session: URLSession
 
     private var sessionCookies: [HTTPCookie] = []
 
-    init() {
+    init(session: URLSession = .shared) {
+        self.session = session
         restoreSession()
     }
 
@@ -129,6 +131,35 @@ class HNAuthManager: ObservableObject {
         }
     }
 
+    func upvote(itemID: Int, completion: @escaping (Bool, String?) -> Void) {
+        guard isLoggedIn else {
+            completion(false, "Not logged in")
+            return
+        }
+
+        fetchVoteAuth(for: itemID) { [weak self] auth in
+            guard let self, let auth else {
+                DispatchQueue.main.async {
+                    completion(false, "Could not retrieve vote token. Try again.")
+                }
+                return
+            }
+            self.postVote(itemID: itemID, auth: auth, completion: completion)
+        }
+    }
+
+    func upvote(itemID: Int) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            upvote(itemID: itemID) { success, error in
+                if success {
+                    continuation.resume()
+                } else {
+                    continuation.resume(throwing: HNError.transport(error ?? "Failed to upvote."))
+                }
+            }
+        }
+    }
+
     private func fetchHMAC(for itemId: Int, completion: @escaping (String?) -> Void) {
         guard let url = URL(string: "\(baseURL)/item?id=\(itemId)") else {
             completion(nil)
@@ -138,7 +169,7 @@ class HNAuthManager: ObservableObject {
         var request = URLRequest(url: url)
         applyCookies(to: &request)
 
-        URLSession.shared.dataTask(with: request) { data, _, _ in
+        session.dataTask(with: request) { data, _, _ in
             guard let data = data, let html = String(data: data, encoding: .utf8) else {
                 completion(nil)
                 return
@@ -158,6 +189,88 @@ class HNAuthManager: ObservableObject {
         }.resume()
     }
 
+    private func fetchVoteAuth(for itemID: Int, completion: @escaping (String?) -> Void) {
+        guard let url = URL(string: "\(baseURL)/item?id=\(itemID)") else {
+            completion(nil)
+            return
+        }
+
+        var request = URLRequest(url: url)
+        applyCookies(to: &request)
+
+        session.dataTask(with: request) { data, _, _ in
+            guard let data, let html = String(data: data, encoding: .utf8) else {
+                completion(nil)
+                return
+            }
+            completion(Self.extractVoteAuth(from: html, itemID: itemID))
+        }.resume()
+    }
+
+    private func postVote(itemID: Int, auth: String, completion: @escaping (Bool, String?) -> Void) {
+        guard let url = Self.voteURL(itemID: itemID, auth: auth) else {
+            completion(false, "Invalid vote URL")
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        applyCookies(to: &request)
+
+        session.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let error {
+                    completion(false, "Network error: \(error.localizedDescription)")
+                    return
+                }
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    completion(false, "Invalid response")
+                    return
+                }
+                guard (200..<400).contains(httpResponse.statusCode) else {
+                    completion(false, "Failed to upvote (status \(httpResponse.statusCode))")
+                    return
+                }
+                if let data, let body = String(data: data, encoding: .utf8),
+                   body.contains("Unknown or expired link") {
+                    completion(false, "Session expired. Please try again.")
+                    return
+                }
+                completion(true, nil)
+            }
+        }.resume()
+    }
+
+    static func extractVoteAuth(from html: String, itemID: Int) -> String? {
+        let escapedID = NSRegularExpression.escapedPattern(for: String(itemID))
+        let patterns = [
+            #"href=["'][^"']*(?:\?|&amp;|&)id=\#(escapedID)(?:&amp;|&)how=up(?:&amp;|&)auth=([^"'&]+)"#,
+            #"id=\#(escapedID)(?:&amp;|&)how=up(?:&amp;|&)auth=([^"'&]+)"#
+        ]
+
+        for pattern in patterns {
+            guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else {
+                continue
+            }
+            let range = NSRange(html.startIndex..<html.endIndex, in: html)
+            guard let match = regex.firstMatch(in: html, range: range),
+                  let tokenRange = Range(match.range(at: 1), in: html) else {
+                continue
+            }
+            let token = String(html[tokenRange])
+            return token.removingPercentEncoding ?? token
+        }
+        return nil
+    }
+
+    static func voteURL(itemID: Int, auth: String, baseURL: String = "https://news.ycombinator.com") -> URL? {
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-._~"))
+        guard let encodedAuth = auth.addingPercentEncoding(withAllowedCharacters: allowed) else {
+            return nil
+        }
+        return URL(string: "\(baseURL)/vote?id=\(itemID)&how=up&auth=\(encodedAuth)")
+    }
+
     private func postComment(parentId: Int, text: String, hmac: String, completion: @escaping (Bool, String?) -> Void) {
         guard let url = URL(string: "\(baseURL)/comment") else {
             completion(false, "Invalid URL")
@@ -172,7 +285,7 @@ class HNAuthManager: ObservableObject {
         let body = "parent=\(parentId)&goto=item%3Fid%3D\(parentId)&hmac=\(urlEncode(hmac))&text=\(urlEncode(text))"
         request.httpBody = body.data(using: .utf8)
 
-        URLSession.shared.dataTask(with: request) { data, response, error in
+        session.dataTask(with: request) { data, response, error in
             DispatchQueue.main.async {
                 if let error = error {
                     completion(false, "Network error: \(error.localizedDescription)")

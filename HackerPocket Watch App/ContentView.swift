@@ -10,6 +10,7 @@ import SwiftUI
 struct ContentView: View {
 
     @EnvironmentObject var authManager: HNAuthManager
+    @EnvironmentObject var storyState: StoryStateModel
     @StateObject private var viewModel = StoriesViewModel()
 
     @AppStorage("selectedFeed") private var feed: Feed = .top
@@ -47,16 +48,24 @@ struct ContentView: View {
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        viewModel.refresh()
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
+                    HStack {
+                        NavigationLink {
+                            SavedStoriesView()
+                        } label: {
+                            Image(systemName: "bookmark")
+                        }
+                        Button {
+                            viewModel.refresh()
+                        } label: {
+                            Image(systemName: "arrow.clockwise")
+                        }
                     }
                     .disabled(viewModel.isLoading)
                 }
             }
         }
         .onAppear {
+            storyState.loadIfNeeded()
             viewModel.loadIfNeeded(feed: feed)
         }
         .onChange(of: feed) { _, newFeed in
@@ -82,6 +91,13 @@ struct ContentView: View {
                 SearchView()
             } label: {
                 Label("Search", systemImage: "magnifyingglass")
+                    .font(.caption2)
+            }
+
+            NavigationLink {
+                ReadHistoryView()
+            } label: {
+                Label("Read History", systemImage: "checkmark.circle")
                     .font(.caption2)
             }
 
@@ -119,4 +135,5 @@ struct ContentView: View {
 #Preview {
     ContentView()
         .environmentObject(HNAuthManager())
+        .environmentObject(StoryStateModel())
 }

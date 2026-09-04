@@ -12,7 +12,11 @@ struct CommentRow: View {
     var onReply: (() -> Void)?
     var onViewReplies: (() -> Void)?
 
+    @EnvironmentObject var authManager: HNAuthManager
+    @EnvironmentObject var storyState: StoryStateModel
     @State private var isExpanded: Bool = false
+    @State private var voteError: String?
+    @State private var voteInFlight = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -72,6 +76,21 @@ struct CommentRow: View {
                         .buttonStyle(.plain)
                         .foregroundStyle(.blue)
                     }
+
+                    if authManager.isLoggedIn && !storyState.hasVoted(comment.id) {
+                        Button {
+                            upvote()
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "arrow.up")
+                                Text("Upvote")
+                            }
+                            .font(.caption2)
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.orange)
+                        .disabled(voteInFlight)
+                    }
                 }
             }
         }
@@ -81,6 +100,32 @@ struct CommentRow: View {
             withAnimation(.easeInOut(duration: 0.2)) {
                 isExpanded.toggle()
             }
+        }
+        .alert(
+            "Upvote failed",
+            isPresented: Binding(
+                get: { voteError != nil },
+                set: { if !$0 { voteError = nil } }
+            )
+        ) {
+            Button("OK") { voteError = nil }
+        } message: {
+            Text(voteError ?? "The vote was not submitted.")
+        }
+    }
+
+    private func upvote() {
+        guard authManager.isLoggedIn, !storyState.hasVoted(comment.id), !voteInFlight else { return }
+        voteInFlight = true
+        storyState.markVoted(comment.id)
+        Task {
+            do {
+                try await authManager.upvote(itemID: comment.id)
+            } catch {
+                storyState.unmarkVoted(comment.id)
+                voteError = error.localizedDescription
+            }
+            voteInFlight = false
         }
     }
 }
@@ -97,4 +142,6 @@ struct CommentRow: View {
         onReply: {},
         onViewReplies: {}
     )
+    .environmentObject(HNAuthManager())
+    .environmentObject(StoryStateModel())
 }

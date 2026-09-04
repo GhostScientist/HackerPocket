@@ -12,12 +12,15 @@ struct DetailView: View {
     let number: Int
 
     @EnvironmentObject var authManager: HNAuthManager
+    @EnvironmentObject var storyState: StoryStateModel
     @StateObject private var viewModel = StoryDetailViewModel()
 
     @AppStorage("hasSeenWebViewTip") private var hasSeenWebViewTip = false
     @State private var webSession: ASWebAuthenticationSession?
     @State private var showWebViewTip = false
     @State private var pendingURL: String?
+
+    var fallback: Story? = nil
 
     private func openURL(_ urlString: String) {
         guard let url = URL(string: urlString) else { return }
@@ -36,7 +39,7 @@ struct DetailView: View {
                     storyContent(story)
                 } else if let error = viewModel.error {
                     ErrorStateView(error: error) {
-                        viewModel.load(id: number)
+                        viewModel.load(id: number, fallback: fallback)
                     }
                 } else {
                     LoadingStateView(message: "Loading story...")
@@ -64,7 +67,9 @@ struct DetailView: View {
             }
         }
         .onAppear {
-            viewModel.loadIfNeeded(id: number)
+            storyState.loadIfNeeded()
+            storyState.markRead(number)
+            viewModel.loadIfNeeded(id: number, fallback: fallback)
         }
     }
 
@@ -153,5 +158,6 @@ struct DetailView: View {
     NavigationStack {
         DetailView(number: 39810320)
             .environmentObject(HNAuthManager())
+            .environmentObject(StoryStateModel())
     }
 }

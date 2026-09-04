@@ -306,24 +306,24 @@ final class StoryDetailViewModel: ObservableObject {
         self.cache = cache
     }
 
-    func loadIfNeeded(id: Int) {
+    func loadIfNeeded(id: Int, fallback: Story? = nil) {
         guard story == nil, !isLoading else { return }
-        load(id: id)
+        load(id: id, fallback: fallback)
     }
 
-    func load(id: Int) {
+    func load(id: Int, fallback: Story? = nil) {
         activeTask?.cancel()
         isLoading = story == nil
         activeTask = Task { [weak self] in
-            await self?.performLoad(id: id)
+            await self?.performLoad(id: id, fallback: fallback)
         }
     }
 
-    private func performLoad(id: Int) async {
+    private func performLoad(id: Int, fallback: Story?) async {
         error = nil
 
-        if story == nil, let cached = await cache.story(id: id) {
-            story = cached
+        if story == nil {
+            story = await cache.story(id: id) ?? fallback
             isLoading = false
         }
 

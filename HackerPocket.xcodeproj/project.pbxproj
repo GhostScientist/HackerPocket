@@ -35,6 +35,9 @@
 		D3DD753B2F383DF00093AA7A /* OpenAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3DD75372F383D7C0093AA7A /* OpenAppIntent.swift */; };
 		A1A1A3022CC3010200000202 /* StoryCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A1A3012CC3010100000201 /* StoryCache.swift */; };
 		A1A1A3042CC3010400000204 /* BackgroundRefresh.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A1A3032CC3010300000203 /* BackgroundRefresh.swift */; };
+		B4B4B4022CC4010200000302 /* StoryState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4B4B4012CC4010100000301 /* StoryState.swift */; };
+		B4B4B4042CC4010400000304 /* SavedStoriesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4B4B4032CC4010300000303 /* SavedStoriesView.swift */; };
+		B4B4B4062CC4010600000306 /* ReadHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4B4B4052CC4010500000305 /* ReadHistoryView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -109,6 +112,9 @@
 		D3DD75392F383DD10093AA7A /* QUICK_START.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = QUICK_START.md; sourceTree = "<group>"; };
 		A1A1A3012CC3010100000201 /* StoryCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoryCache.swift; sourceTree = "<group>"; };
 		A1A1A3032CC3010300000203 /* BackgroundRefresh.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundRefresh.swift; sourceTree = "<group>"; };
+		B4B4B4012CC4010100000301 /* StoryState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoryState.swift; sourceTree = "<group>"; };
+		B4B4B4032CC4010300000303 /* SavedStoriesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedStoriesView.swift; sourceTree = "<group>"; };
+		B4B4B4052CC4010500000305 /* ReadHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadHistoryView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -186,6 +192,9 @@
 				A1A1A2052CC2010500000105 /* SearchView.swift */,
 				A1A1A3012CC3010100000201 /* StoryCache.swift */,
 				A1A1A3032CC3010300000203 /* BackgroundRefresh.swift */,
+				B4B4B4012CC4010100000301 /* StoryState.swift */,
+				B4B4B4032CC4010300000303 /* SavedStoriesView.swift */,
+				B4B4B4052CC4010500000305 /* ReadHistoryView.swift */,
 				A1A1A1012CC1000100000001 /* OnboardingView.swift */,
 				A1A1A1032CC1000300000003 /* HNAuthManager.swift */,
 				A1A1A1052CC1000500000005 /* LoginView.swift */,
@@ -361,6 +370,9 @@
 				A1A1A2062CC2010600000106 /* SearchView.swift in Sources */,
 				A1A1A3022CC3010200000202 /* StoryCache.swift in Sources */,
 				A1A1A3042CC3010400000204 /* BackgroundRefresh.swift in Sources */,
+				B4B4B4022CC4010200000302 /* StoryState.swift in Sources */,
+				B4B4B4042CC4010400000304 /* SavedStoriesView.swift in Sources */,
+				B4B4B4062CC4010600000306 /* ReadHistoryView.swift in Sources */,
 				D3C101292BAF589100A6A63B /* CommentsView.swift in Sources */,
 				A1A1A1022CC1000200000002 /* OnboardingView.swift in Sources */,
 				A1A1A1042CC1000400000004 /* HNAuthManager.swift in Sources */,
