@@ -9,6 +9,7 @@ import SwiftUI
 
 @main
 struct HackerPocket_Watch_AppApp: App {
+    @WKApplicationDelegateAdaptor(HackerPocketAppDelegate.self) private var appDelegate
     @StateObject private var authManager = HNAuthManager()
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
 

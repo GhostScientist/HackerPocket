@@ -91,6 +91,8 @@ struct ContentView: View {
                 InlineErrorView(error: error) {
                     viewModel.refresh()
                 }
+            } else if let updated = viewModel.lastUpdated {
+                CacheStatusRow(updatedAt: updated, isRefreshing: viewModel.isRevalidating)
             }
 
             if !viewModel.hasContent && !viewModel.isLoading {

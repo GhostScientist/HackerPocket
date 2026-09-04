@@ -33,6 +33,8 @@
 		D3DD75382F383D7C0093AA7A /* OpenAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3DD75372F383D7C0093AA7A /* OpenAppIntent.swift */; };
 		D3DD753A2F383DD10093AA7A /* QUICK_START.md in Resources */ = {isa = PBXBuildFile; fileRef = D3DD75392F383DD10093AA7A /* QUICK_START.md */; };
 		D3DD753B2F383DF00093AA7A /* OpenAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3DD75372F383D7C0093AA7A /* OpenAppIntent.swift */; };
+		A1A1A3022CC3010200000202 /* StoryCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A1A3012CC3010100000201 /* StoryCache.swift */; };
+		A1A1A3042CC3010400000204 /* BackgroundRefresh.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A1A3032CC3010300000203 /* BackgroundRefresh.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -105,6 +107,8 @@
 		D3DD75362F383CF50093AA7A /* HackerPocket-Watch-App-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "HackerPocket-Watch-App-Info.plist"; sourceTree = SOURCE_ROOT; };
 		D3DD75372F383D7C0093AA7A /* OpenAppIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAppIntent.swift; sourceTree = "<group>"; };
 		D3DD75392F383DD10093AA7A /* QUICK_START.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = QUICK_START.md; sourceTree = "<group>"; };
+		A1A1A3012CC3010100000201 /* StoryCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoryCache.swift; sourceTree = "<group>"; };
+		A1A1A3032CC3010300000203 /* BackgroundRefresh.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundRefresh.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -180,6 +184,8 @@
 				A1A1A2012CC2010100000101 /* Feed.swift */,
 				A1A1A2032CC2010300000103 /* HNSearchService.swift */,
 				A1A1A2052CC2010500000105 /* SearchView.swift */,
+				A1A1A3012CC3010100000201 /* StoryCache.swift */,
+				A1A1A3032CC3010300000203 /* BackgroundRefresh.swift */,
 				A1A1A1012CC1000100000001 /* OnboardingView.swift */,
 				A1A1A1032CC1000300000003 /* HNAuthManager.swift */,
 				A1A1A1052CC1000500000005 /* LoginView.swift */,
@@ -353,6 +359,8 @@
 				A1A1A2022CC2010200000102 /* Feed.swift in Sources */,
 				A1A1A2042CC2010400000104 /* HNSearchService.swift in Sources */,
 				A1A1A2062CC2010600000106 /* SearchView.swift in Sources */,
+				A1A1A3022CC3010200000202 /* StoryCache.swift in Sources */,
+				A1A1A3042CC3010400000204 /* BackgroundRefresh.swift in Sources */,
 				D3C101292BAF589100A6A63B /* CommentsView.swift in Sources */,
 				A1A1A1022CC1000200000002 /* OnboardingView.swift in Sources */,
 				A1A1A1042CC1000400000004 /* HNAuthManager.swift in Sources */,
