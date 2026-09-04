@@ -76,15 +76,21 @@ struct CommentsView: View {
         List {
             if let parent = parentComment {
                 VStack(alignment: .leading, spacing: 4) {
-                    HStack {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
                         Text(parent.by)
                             .font(.caption2)
                             .fontWeight(.semibold)
                             .foregroundStyle(.orange)
-                        Spacer()
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+
+                        Spacer(minLength: 4)
+
                         Text(parent.postedTime)
                             .font(.caption2)
                             .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .fixedSize(horizontal: true, vertical: false)
                     }
                     Text(parent.formattedText)
                         .font(.caption2)
@@ -121,5 +127,6 @@ struct CommentsView: View {
                 .listRowInsets(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8))
             }
         }
+        .contentMargins(.top, 18, for: .scrollContent)
     }
 }

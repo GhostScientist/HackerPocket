@@ -29,17 +29,22 @@ struct StoryRowView: View {
                 .lineLimit(3)
                 .truncationMode(.tail)
 
-            HStack(spacing: 12) {
-                Label("\(displayedScore)", systemImage: "arrow.up")
-                    .font(.caption2)
-                    .foregroundStyle(.orange)
+            HStack(spacing: 8) {
+                storyMetric(
+                    value: displayedScore,
+                    systemImage: "arrow.up",
+                    color: .orange
+                )
 
                 // Jobs posts have no comments; an always-visible "0" bubble
                 // just reads as a broken row.
                 if story.descendants > 0 || !story.kids.isEmpty {
-                    Label("\(max(story.descendants, story.kids.count))", systemImage: "bubble.left.and.bubble.right")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                    Spacer(minLength: 4)
+                    storyMetric(
+                        value: max(story.descendants, story.kids.count),
+                        systemImage: "bubble.left.and.bubble.right",
+                        color: .secondary
+                    )
                 }
 
                 Spacer()
@@ -96,6 +101,20 @@ struct StoryRowView: View {
         } message: {
             Text(voteError ?? "The vote was not submitted.")
         }
+    }
+
+    private func storyMetric(value: Int, systemImage: String, color: Color) -> some View {
+        HStack(spacing: 3) {
+            Image(systemName: systemImage)
+                .imageScale(.small)
+
+            Text(value, format: .number)
+                .monospacedDigit()
+        }
+        .font(.caption2)
+        .foregroundStyle(color)
+        .lineLimit(1)
+        .fixedSize(horizontal: true, vertical: false)
     }
 
     private func upvote() {
