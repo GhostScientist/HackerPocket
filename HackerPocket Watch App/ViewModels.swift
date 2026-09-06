@@ -371,6 +371,9 @@ final class CommentsViewModel: ObservableObject {
     @Published private(set) var isLoading = false
     @Published private(set) var isLoadingMore = false
     @Published private(set) var error: HNError?
+    @Published private(set) var scrollID: Int?
+    @Published private(set) var positionMessage: String?
+    @Published private(set) var needsPositionRetry = false
 
     private let service: HNService
     private let cache: StoryCache
@@ -385,6 +388,7 @@ final class CommentsViewModel: ObservableObject {
     private var commentsByID: [Int: Comment] = [:]
 
     private var loadedIDCount = 0
+    private var firstLoadedIndex = 0
 
     /// The story or comment these replies hang off. Used as the cache key —
     /// `CommentsView` recurses for threads, so `storyId` alone would make every
@@ -392,10 +396,25 @@ final class CommentsViewModel: ObservableObject {
     private var parentID = 0
 
     private var activeTask: Task<Void, Never>?
+    private var generation = 0
+    private var hasLoaded = false
+    private var retryEarlier = false
+    private var initialLoadFailed = false
 
-    init(service: HNService = .shared, cache: StoryCache = .shared) {
+    private struct ReadingPosition: Codable {
+        let commentID: Int
+        let index: Int
+        let updatedAt: Date
+    }
+
+    private static let positionsKey = "discussionReadingPositions"
+    private let defaults: UserDefaults
+    private var savedPosition: ReadingPosition?
+
+    init(service: HNService = .shared, cache: StoryCache = .shared, defaults: UserDefaults = .standard) {
         self.service = service
         self.cache = cache
+        self.defaults = defaults
     }
 
     var canLoadMore: Bool {
@@ -406,98 +425,230 @@ final class CommentsViewModel: ObservableObject {
         max(rankedIDs.count - loadedIDCount, 0)
     }
 
+    var canLoadEarlier: Bool { firstLoadedIndex > 0 }
+
     func loadIfNeeded(ids: [Int], parentID: Int) {
-        guard rankedIDs.isEmpty, !isLoading else { return }
+        guard !hasLoaded, !isLoading else { return }
         load(ids: ids, parentID: parentID)
     }
 
     func load(ids: [Int], parentID: Int) {
         activeTask?.cancel()
+        generation &+= 1
+        let generation = generation
         rankedIDs = ids
         commentsByID = [:]
         loadedIDCount = 0
+        firstLoadedIndex = 0
         comments = []
         self.parentID = parentID
+        savedPosition = positions()[String(parentID)]
+        scrollID = nil
+        positionMessage = nil
+        needsPositionRetry = false
+        initialLoadFailed = false
+        error = nil
+        isLoading = true
+        isLoadingMore = false
+        hasLoaded = true
         activeTask = Task { [weak self] in
-            await self?.performInitialLoad()
+            await self?.performInitialLoad(generation: generation)
         }
     }
 
     func loadMore() {
-        guard canLoadMore, !isLoading, !isLoadingMore else { return }
-        activeTask = Task { [weak self] in
-            await self?.performLoadPage(isInitial: false)
+        loadPage(earlier: false)
+    }
+
+    func loadEarlier() {
+        loadPage(earlier: true)
+    }
+
+    func retry() {
+        if initialLoadFailed || needsPositionRetry || comments.isEmpty && loadedIDCount == 0 {
+            load(ids: rankedIDs, parentID: parentID)
+        } else {
+            loadPage(earlier: retryEarlier)
         }
     }
 
-    private func performInitialLoad() async {
-        isLoading = true
-        isLoadingMore = false
-        error = nil
+    func updatePosition(_ id: Int?) {
+        guard !isLoading, let id,
+              id == parentID || comments.contains(where: { $0.id == id }) else { return }
+        scrollID = id
+        // An offline fallback must not erase the deep bookmark being retried.
+        guard !needsPositionRetry else { return }
+        let index = rankedIDs.firstIndex(of: id) ?? -1
+        guard savedPosition?.commentID != id || savedPosition?.index != index else { return }
+        savedPosition = ReadingPosition(commentID: id, index: index, updatedAt: Date())
+        var stored = positions()
+        stored[String(parentID)] = savedPosition
+        let recent = stored.sorted { $0.value.updatedAt > $1.value.updatedAt }.prefix(40)
+        if let data = try? JSONEncoder().encode(Dictionary(uniqueKeysWithValues: recent.map { ($0.key, $0.value) })) {
+            defaults.set(data, forKey: Self.positionsKey)
+        }
+    }
 
-        // Unlike stories, a cached thread is not revalidated. Comment text is
-        // immutable once posted; what changes is the `kids` array, and that
-        // arrives fresh with the story, so a matching `rankedIDs` means the
-        // cached page is still exactly right.
-        if let snapshot = await cache.comments(parentID: parentID),
-           snapshot.rankedIDs == rankedIDs,
-           snapshot.loadedIDCount > 0 {
+    func readFromHere() {
+        needsPositionRetry = false
+        initialLoadFailed = false
+        positionMessage = nil
+        error = nil
+        updatePosition(scrollID ?? comments.first?.id)
+    }
+
+    private func positions() -> [String: ReadingPosition] {
+        guard let data = defaults.data(forKey: Self.positionsKey),
+              let stored = try? JSONDecoder().decode([String: ReadingPosition].self, from: data) else { return [:] }
+        return stored
+    }
+
+    private func loadPage(earlier: Bool) {
+        guard (earlier ? canLoadEarlier : canLoadMore),
+              !isLoading, !isLoadingMore else { return }
+        isLoadingMore = true
+        retryEarlier = earlier
+        let generation = generation
+        let lower = earlier ? max(firstLoadedIndex - pageSize, 0) : loadedIDCount
+        let upper = earlier ? firstLoadedIndex : min(loadedIDCount + pageSize, rankedIDs.count)
+        activeTask = Task { [weak self] in
+            await self?.performLoadPage(lower: lower, upper: upper, generation: generation)
+        }
+    }
+
+    private func performInitialLoad(generation: Int) async {
+        let snapshot = await cache.comments(parentID: parentID)
+        guard generation == self.generation, !Task.isCancelled else { return }
+        if let snapshot {
+            // Reuse cached rows even if replies were added or reordered. Only a
+            // contiguous, known prefix counts as loaded for subsequent paging.
+            let live = Set(rankedIDs)
             commentsByID = Dictionary(
-                snapshot.comments.map { ($0.id, $0) },
+                snapshot.comments.filter { live.contains($0.id) && !$0.isHidden }.map { ($0.id, $0) },
                 uniquingKeysWith: { _, latest in latest }
             )
-            loadedIDCount = min(snapshot.loadedIDCount, rankedIDs.count)
-            publishComments()
-            isLoading = false
-            return
+            if snapshot.rankedIDs == rankedIDs {
+                loadedIDCount = max(0, min(snapshot.loadedIDCount, rankedIDs.count))
+            } else {
+                loadedIDCount = rankedIDs.prefix(while: { commentsByID[$0] != nil }).count
+            }
         }
 
-        await performLoadPage(isInitial: true)
+        let targetIndex: Int
+        if let savedPosition, savedPosition.commentID != parentID, !rankedIDs.isEmpty {
+            targetIndex = rankedIDs.firstIndex(of: savedPosition.commentID)
+                ?? min(max(savedPosition.index, 0), rankedIDs.count - 1)
+        } else {
+            targetIndex = 0
+        }
+
+        var fetchedPage = false
+        // Jump directly to ONE page near the bookmark, never fetch every page
+        // between the capped disk cache and a deeply nested reading position.
+        if loadedIDCount == 0 || targetIndex >= loadedIDCount {
+            let lower = targetIndex / pageSize * pageSize
+            let upper = min(lower + pageSize, rankedIDs.count)
+            do {
+                var page = try await service.comments(ids: Array(rankedIDs[lower..<upper]))
+                try Task.checkCancellation()
+                guard generation == self.generation else { return }
+                if let savedPosition,
+                   rankedIDs[lower..<upper].contains(savedPosition.commentID),
+                   !page.contains(where: { $0.id == savedPosition.commentID }) {
+                    // Batches tolerate individual failures. A single-item
+                    // request distinguishes transport errors from hidden/null.
+                    page += try await service.comments(ids: [savedPosition.commentID])
+                }
+                try Task.checkCancellation()
+                guard generation == self.generation else { return }
+                for id in rankedIDs[lower..<upper] { commentsByID[id] = nil }
+                for comment in page { commentsByID[comment.id] = comment }
+                firstLoadedIndex = lower
+                loadedIDCount = upper
+                fetchedPage = true
+            } catch {
+                guard generation == self.generation, !Task.isCancelled else { return }
+                initialLoadFailed = true
+                self.error = HNError.from(error)
+                needsPositionRetry = savedPosition != nil
+                if needsPositionRetry {
+                    positionMessage = "Saved position unavailable. Retry when online, or read from here."
+                }
+                // A reordered thread may have a cached bookmark outside its
+                // known prefix. Prefer its contiguous window while offline.
+                if let savedPosition, commentsByID[savedPosition.commentID] != nil,
+                   let index = rankedIDs.firstIndex(of: savedPosition.commentID) {
+                    firstLoadedIndex = index
+                    while firstLoadedIndex > 0 && commentsByID[rankedIDs[firstLoadedIndex - 1]] != nil {
+                        firstLoadedIndex -= 1
+                    }
+                    loadedIDCount = index + 1
+                    while loadedIDCount < rankedIDs.count && commentsByID[rankedIDs[loadedIDCount]] != nil {
+                        loadedIDCount += 1
+                    }
+                    positionMessage = "Showing cached saved comment. Retry when online, or read from here."
+                } else if loadedIDCount == 0,
+                   let first = rankedIDs.firstIndex(where: { commentsByID[$0] != nil }) {
+                    firstLoadedIndex = first
+                    loadedIDCount = first + rankedIDs[first...].prefix(while: { commentsByID[$0] != nil }).count
+                }
+            }
+        }
+        publishComments()
+        if savedPosition?.commentID == parentID {
+            scrollID = parentID
+        } else if let savedPosition {
+            scrollID = comments.first(where: { $0.id == savedPosition.commentID })?.id
+                ?? (firstLoadedIndex..<loadedIDCount)
+                    .filter { commentsByID[rankedIDs[$0]] != nil }
+                    .min(by: { abs($0 - targetIndex) < abs($1 - targetIndex) })
+                    .map { rankedIDs[$0] }
+            if scrollID != savedPosition.commentID && !needsPositionRetry {
+                positionMessage = comments.isEmpty
+                    ? "Saved comment unavailable. No readable comments here."
+                    : "Saved comment unavailable. Showing nearby comments."
+            }
+        }
+        isLoading = false
+        if fetchedPage {
+            await storeLoadedPrefix()
+        }
     }
 
-    private func performLoadPage(isInitial: Bool) async {
-        if isInitial {
-            isLoading = true
-            isLoadingMore = false
-            error = nil
-        } else {
-            isLoadingMore = true
-        }
-
-        let upperBound = min(loadedIDCount + pageSize, rankedIDs.count)
-        let nextPage = Array(rankedIDs[loadedIDCount..<upperBound])
-
+    private func performLoadPage(lower: Int, upper: Int, generation: Int) async {
         do {
-            let page = try await service.comments(ids: nextPage)
+            let page = try await service.comments(ids: Array(rankedIDs[lower..<upper]))
             try Task.checkCancellation()
-
+            guard generation == self.generation else { return }
+            for id in rankedIDs[lower..<upper] { commentsByID[id] = nil }
             for comment in page { commentsByID[comment.id] = comment }
-            loadedIDCount = upperBound
+            firstLoadedIndex = min(firstLoadedIndex, lower)
+            loadedIDCount = max(loadedIDCount, upper)
             publishComments()
             error = nil
-            if isInitial {
-                WatchHaptics.success()
-            }
-
-            await cache.store(
-                parentID: parentID,
-                rankedIDs: rankedIDs,
-                comments: comments,
-                loadedIDCount: loadedIDCount
-            )
+            initialLoadFailed = false
+            await storeLoadedPrefix()
         } catch is CancellationError {
             return
         } catch {
+            guard generation == self.generation else { return }
             self.error = HNError.from(error)
             WatchHaptics.failure()
         }
-
-        isLoading = false
+        guard generation == self.generation else { return }
         isLoadingMore = false
     }
 
+    private func storeLoadedPrefix() async {
+        // StoryCache's format describes a prefix, not a window. Never mark an
+        // unfetched gap as loaded, or overwrite useful offline data with it.
+        guard firstLoadedIndex == 0, loadedIDCount > 0 else { return }
+        await cache.store(parentID: parentID, rankedIDs: rankedIDs,
+                          comments: comments, loadedIDCount: loadedIDCount)
+    }
+
     private func publishComments() {
-        let window = rankedIDs.prefix(loadedIDCount)
+        let window = rankedIDs[firstLoadedIndex..<loadedIDCount]
         comments = window.compactMap { commentsByID[$0] }
     }
 }

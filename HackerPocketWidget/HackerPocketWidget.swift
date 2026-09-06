@@ -40,12 +40,18 @@ struct HackerPocketTimelineProvider: TimelineProvider {
     }
     
     func getSnapshot(in context: Context, completion: @escaping (HackerPocketEntry) -> Void) {
-        let entry = HackerPocketEntry(date: Date(), topStoryTitle: "Hacker News", storyID: nil, storyCount: 0)
-        completion(entry)
+        if context.isPreview {
+            completion(placeholder(in: context))
+        } else {
+            fetchTopStory { title, storyID, count in
+                completion(HackerPocketEntry(
+                    date: Date(), topStoryTitle: title, storyID: storyID, storyCount: count
+                ))
+            }
+        }
     }
     
     func getTimeline(in context: Context, completion: @escaping (Timeline<HackerPocketEntry>) -> Void) {
-        // Fetch the latest story count or title if desired
         fetchTopStory { title, storyID, count in
             let currentDate = Date()
             let entry = HackerPocketEntry(
@@ -55,8 +61,8 @@ struct HackerPocketTimelineProvider: TimelineProvider {
                 storyCount: count
             )
             
-            // Update every hour
-            let nextUpdate = Calendar.current.date(byAdding: .hour, value: 1, to: currentDate)!
+            // Request another fetch in an hour; watchOS decides when it can run.
+            let nextUpdate = currentDate.addingTimeInterval(60 * 60)
             let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
             completion(timeline)
         }
@@ -66,7 +72,10 @@ struct HackerPocketTimelineProvider: TimelineProvider {
         let url = URL(string: "https://hacker-news.firebaseio.com/v0/topstories.json")!
         
         URLSession.shared.dataTask(with: url) { data, response, error in
-            guard let data = data,
+            guard error == nil,
+                  let response = response as? HTTPURLResponse,
+                  (200..<300).contains(response.statusCode),
+                  let data = data,
                   let storyIds = try? JSONDecoder().decode([Int].self, from: data),
                   let firstId = storyIds.first else {
                 completion(nil, nil, 0)
@@ -75,12 +84,18 @@ struct HackerPocketTimelineProvider: TimelineProvider {
             
             // Fetch the first story's title
             let storyURL = URL(string: "https://hacker-news.firebaseio.com/v0/item/\(firstId).json")!
-            URLSession.shared.dataTask(with: storyURL) { data, _, _ in
-                if let data = data,
-                   let story = try? JSONDecoder().decode(StoryData.self, from: data) {
+            URLSession.shared.dataTask(with: storyURL) { data, response, error in
+                if error == nil,
+                   let response = response as? HTTPURLResponse,
+                   (200..<300).contains(response.statusCode),
+                   let data = data,
+                   let story = try? JSONDecoder().decode(StoryData.self, from: data),
+                   story.id == firstId,
+                   story.dead != true, story.deleted != true,
+                   !story.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     completion(story.title, story.id, storyIds.count)
                 } else {
-                    completion(nil, firstId, storyIds.count)
+                    completion(nil, nil, storyIds.count)
                 }
             }.resume()
         }.resume()
@@ -89,6 +104,8 @@ struct HackerPocketTimelineProvider: TimelineProvider {
     struct StoryData: Codable {
         let id: Int
         let title: String
+        let dead: Bool?
+        let deleted: Bool?
     }
 }
 
@@ -122,28 +139,31 @@ struct HackerPocketWidgetView: View {
             }
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Open HackerPocket")
     }
     
     private var rectangularView: some View {
-        HStack(spacing: 6) {
-            // Y icon
-            Text("HN")
-                .font(.system(size: 24, weight: .bold, design: .rounded))
-                .foregroundStyle(.orange)
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text("Hacker News")
-                    .font(.system(size: 14, weight: .semibold))
-                if let title = entry.topStoryTitle {
-                    Text(title)
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                } else {
-                    Text("Top Stories")
-                        .font(.system(size: 11))
+        VStack(alignment: .leading, spacing: 3) {
+            if let title = entry.topStoryTitle {
+                Text(title)
+                    .font(.footnote.weight(.semibold))
+                    .lineLimit(2)
+                    .layoutPriority(1)
+                HStack(spacing: 4) {
+                    Text("HN")
+                        .foregroundStyle(.orange)
+                    Text("Fetched \(entry.date, style: .relative) ago")
                         .foregroundStyle(.secondary)
                 }
+                .font(.caption2)
+                .lineLimit(1)
+            } else {
+                Text("Headline unavailable")
+                    .font(.footnote.weight(.semibold))
+                    .lineLimit(2)
+                Text("Open HackerPocket")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -151,16 +171,18 @@ struct HackerPocketWidgetView: View {
             entry.storyID.flatMap { URL(string: "hackerpocket://story/\($0)") }
                 ?? URL(string: "hackerpocket://")
         )
+        .accessibilityElement(children: .combine)
     }
     
     private var cornerView: some View {
         Button(intent: OpenAppIntent()) {
-            // For corner, just use the Y icon
+            // Keep the small complication recognizable at a glance.
             Text("HN")
                 .font(.system(size: 20, weight: .bold, design: .rounded))
                 .foregroundStyle(.orange)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Open HackerPocket")
     }
     
     private var inlineView: some View {
@@ -174,6 +196,7 @@ struct HackerPocketWidgetView: View {
             }
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Open HackerPocket")
     }
 }
 
@@ -203,4 +226,21 @@ struct HackerPocketWidgetView: View {
     HackerPocketWidget()
 } timeline: {
     HackerPocketEntry(date: Date(), topStoryTitle: "Sample Story", storyID: nil, storyCount: 500)
+}
+
+#Preview("Unavailable", as: .accessoryRectangular) {
+    HackerPocketWidget()
+} timeline: {
+    HackerPocketEntry(date: Date(), topStoryTitle: nil, storyID: nil, storyCount: 0)
+}
+
+#Preview("Older headline", as: .accessoryRectangular) {
+    HackerPocketWidget()
+} timeline: {
+    HackerPocketEntry(
+        date: Date().addingTimeInterval(-6 * 60 * 60),
+        topStoryTitle: "Show HN: A small project with a surprisingly long headline",
+        storyID: 1,
+        storyCount: 500
+    )
 }

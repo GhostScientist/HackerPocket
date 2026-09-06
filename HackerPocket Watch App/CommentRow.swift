@@ -11,12 +11,15 @@ struct CommentRow: View {
     var comment: Comment
     var onReply: (() -> Void)?
     var onViewReplies: (() -> Void)?
+    var showsActions = true
 
     @EnvironmentObject var authManager: HNAuthManager
     @EnvironmentObject var storyState: StoryStateModel
     @State private var isExpanded: Bool = false
     @State private var voteError: String?
     @State private var voteInFlight = false
+    @State private var collapsedTextHeight: CGFloat = 0
+    @State private var fullTextHeight: CGFloat = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -37,71 +40,87 @@ struct CommentRow: View {
                     .fixedSize(horizontal: true, vertical: false)
             }
 
-            Text(comment.formattedText)
-                .font(.caption2)
-                .lineLimit(isExpanded ? nil : 4)
-                .truncationMode(.tail)
-                .fixedSize(horizontal: false, vertical: isExpanded)
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        isExpanded.toggle()
+            commentText(lineLimit: isExpanded ? nil : 4)
+                .background(alignment: .topLeading) {
+                    // Background copies share the rendered width and font,
+                    // without adding layout space or accessibility elements.
+                    ZStack(alignment: .topLeading) {
+                        commentText(lineLimit: 4)
+                            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: {
+                                collapsedTextHeight = $0
+                            }
+                        commentText(lineLimit: nil)
+                            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: {
+                                fullTextHeight = $0
+                            }
                     }
+                    .hidden()
+                    .accessibilityHidden(true)
+                    .allowsHitTesting(false)
                 }
-                .accessibilityHint("Double tap to expand or collapse.")
 
-            HStack(spacing: 8) {
-                if let kids = comment.kids, !kids.isEmpty, let onViewReplies {
-                    Button {
-                        onViewReplies()
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "text.bubble")
-                            Text(kids.count, format: .number)
-                                .monospacedDigit()
+            if isExpanded || (collapsedTextHeight > 0 && fullTextHeight > collapsedTextHeight + 0.5) {
+                Button {
+                    isExpanded.toggle()
+                } label: {
+                    Label(isExpanded ? "Less" : "More",
+                          systemImage: isExpanded ? "chevron.up" : "chevron.down")
+                        .font(.caption)
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.orange)
+                .accessibilityLabel(isExpanded ? "Show less comment text" : "Show full comment")
+            }
+
+            if showsActions {
+                VStack(alignment: .leading, spacing: 2) {
+                    if let kids = comment.kids, !kids.isEmpty, let onViewReplies {
+                        Button(action: onViewReplies) {
+                            Label(kids.count == 1 ? "1 reply" : "\(kids.count) replies",
+                                  systemImage: "text.bubble")
+                                .font(.caption)
+                                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                                .contentShape(Rectangle())
                         }
-                        .font(.caption2)
-                        .lineLimit(1)
-                        .fixedSize(horizontal: true, vertical: false)
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.orange)
+                        .accessibilityHint("Open this comment's replies.")
                     }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.teal)
-                    .accessibilityLabel(kids.count == 1 ? "View 1 Reply" : "View \(kids.count) Replies")
-                    .accessibilityHint("Open this comment's replies.")
-                }
 
-                Spacer(minLength: 4)
+                    HStack(spacing: 8) {
+                        if let onReply {
+                            Button(action: onReply) {
+                                Image(systemName: "arrowshape.turn.up.left.fill")
+                                    .font(.body)
+                                    .frame(minWidth: 44, minHeight: 44)
+                                    .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .foregroundStyle(.secondary)
+                            .accessibilityLabel("Reply")
+                            .accessibilityHint("Reply to this comment.")
+                        }
 
-                if let onReply {
-                    Button {
-                        onReply()
-                    } label: {
-                        Image(systemName: "arrowshape.turn.up.left.fill")
-                            .font(.caption)
-                            .frame(minWidth: 28, minHeight: 28)
+                        if authManager.isLoggedIn && !storyState.hasVoted(comment.id) {
+                            Button {
+                                upvote()
+                            } label: {
+                                Image(systemName: "arrow.up")
+                                    .font(.body)
+                                    .frame(minWidth: 44, minHeight: 44)
+                                    .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .foregroundStyle(.secondary)
+                            .disabled(voteInFlight)
+                            .accessibilityLabel("Upvote")
+                            .accessibilityHint("Upvote this comment.")
+                        }
                     }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.blue)
-                    .accessibilityLabel("Reply")
-                    .accessibilityHint("Reply to this comment.")
-                }
-
-                if authManager.isLoggedIn && !storyState.hasVoted(comment.id) {
-                    Button {
-                        upvote()
-                    } label: {
-                        Image(systemName: "arrow.up")
-                            .font(.caption)
-                            .frame(minWidth: 28, minHeight: 28)
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.orange)
-                    .disabled(voteInFlight)
-                    .accessibilityLabel("Upvote")
-                    .accessibilityHint("Upvote this comment.")
                 }
             }
-            .frame(minHeight: 28)
         }
         .padding(.vertical, 4)
         .alert(
@@ -115,6 +134,15 @@ struct CommentRow: View {
         } message: {
             Text(voteError ?? "The vote was not submitted.")
         }
+    }
+
+    private func commentText(lineLimit: Int?) -> some View {
+        Text(comment.formattedText)
+            .font(.body)
+            .lineLimit(lineLimit)
+            .truncationMode(.tail)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func upvote() {

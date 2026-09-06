@@ -14,11 +14,16 @@ struct SavedStoriesView: View {
                 VStack(spacing: 8) {
                     Image(systemName: "bookmark")
                         .font(.title3)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.orange)
+                        .accessibilityHidden(true)
                     Text("No saved stories")
+                        .font(.headline)
+                    Text("Save a story from its page or swipe left on a headline.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
                 }
+                .padding(.horizontal)
             } else {
                 List {
                     ForEach(storyState.savedStories) { saved in
@@ -27,11 +32,13 @@ struct SavedStoriesView: View {
                         } label: {
                             StoryRowView(story: saved.row)
                         }
+                        .listRowBackground(Color.white.opacity(0.08))
                     }
                 }
             }
         }
         .navigationTitle("Saved")
+        .containerBackground(.black, for: .navigation)
         .onAppear {
             storyState.loadIfNeeded()
         }
@@ -42,5 +49,6 @@ struct SavedStoriesView: View {
     NavigationStack {
         SavedStoriesView()
     }
+    .environmentObject(HNAuthManager())
     .environmentObject(StoryStateModel())
 }
