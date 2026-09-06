@@ -175,8 +175,8 @@ struct ContentView: View {
                     viewModel.loadMore()
                 }
             }
-            .containerBackground(.black, for: .navigation)
         }
+        .containerBackground(.black, for: .navigation)
     }
 }
 
