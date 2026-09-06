@@ -543,9 +543,13 @@ final class CommentsViewModel: ObservableObject {
         }
 
         var fetchedPage = false
+        let missingSavedComment = savedPosition.map {
+            $0.commentID != parentID && rankedIDs.contains($0.commentID)
+                && commentsByID[$0.commentID] == nil
+        } ?? false
         // Jump directly to ONE page near the bookmark, never fetch every page
         // between the capped disk cache and a deeply nested reading position.
-        if loadedIDCount == 0 || targetIndex >= loadedIDCount {
+        if loadedIDCount == 0 || targetIndex >= loadedIDCount || missingSavedComment {
             let lower = targetIndex / pageSize * pageSize
             let upper = min(lower + pageSize, rankedIDs.count)
             do {
