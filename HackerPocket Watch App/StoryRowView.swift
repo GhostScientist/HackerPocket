@@ -24,34 +24,34 @@ struct StoryRowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(story.title)
-                .font(.caption)
-                .fontWeight(.medium)
-                .lineLimit(3)
-                .truncationMode(.tail)
+                .font(.footnote)
+                .fontWeight(.semibold)
+                .foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true)
 
-            HStack(spacing: 8) {
-                storyMetric(
-                    value: displayedScore,
-                    systemImage: "arrow.up",
-                    color: .orange
-                )
+            if let sourceDetails = story.sourceDetails {
+                Text(sourceDetails)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
-                // Jobs posts have no comments; an always-visible "0" bubble
-                // just reads as a broken row.
-                if story.descendants > 0 || !story.kids.isEmpty {
-                    Spacer(minLength: 4)
-                    storyMetric(
-                        value: max(story.descendants, story.kids.count),
-                        systemImage: "bubble.left.and.bubble.right",
-                        color: .secondary
-                    )
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    metrics
+                    Spacer(minLength: 0)
+                    stateMarkers
                 }
-
-                Spacer()
+                VStack(alignment: .leading, spacing: 6) {
+                    metrics
+                    stateMarkers
+                }
             }
         }
-        .padding(.vertical, 2)
-        .opacity(storyState.isRead(story.id) ? 0.55 : 1)
+        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .listRowBackground(Color.white.opacity(0.06))
+        .accessibilityElement(children: .combine)
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             Button {
                 if storyState.isSaved(story.id) {
@@ -65,7 +65,7 @@ struct StoryRowView: View {
                     systemImage: storyState.isSaved(story.id) ? "bookmark.slash" : "bookmark"
                 )
             }
-            .tint(.blue)
+            .tint(.orange)
             .accessibilityLabel(storyState.isSaved(story.id) ? "Unsave Story" : "Save Story")
             .accessibilityHint(
                 storyState.isSaved(story.id)
@@ -101,6 +101,42 @@ struct StoryRowView: View {
         } message: {
             Text(voteError ?? "The vote was not submitted.")
         }
+    }
+
+    private var metrics: some View {
+        HStack(spacing: 10) {
+            storyMetric(
+                value: displayedScore,
+                systemImage: "arrow.up",
+                color: .orange
+            )
+            .accessibilityLabel("\(displayedScore) points")
+
+            if story.descendants > 0 || !story.kids.isEmpty {
+                storyMetric(
+                    value: max(story.descendants, story.kids.count),
+                    systemImage: "bubble.left.and.bubble.right",
+                    color: .secondary
+                )
+                .accessibilityLabel("\(max(story.descendants, story.kids.count)) comments")
+            }
+        }
+    }
+
+    private var stateMarkers: some View {
+        HStack(spacing: 6) {
+            if storyState.isSaved(story.id) {
+                Image(systemName: "bookmark.fill")
+                    .foregroundStyle(.orange)
+                    .accessibilityLabel("Saved")
+            }
+            if storyState.isRead(story.id) {
+                Image(systemName: "checkmark.circle")
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel("Read")
+            }
+        }
+        .font(.caption2)
     }
 
     private func storyMetric(value: Int, systemImage: String, color: Color) -> some View {
@@ -139,7 +175,19 @@ struct StoryRowView: View {
 }
 
 #Preview {
-    StoryRowView(story: StoryRow(id: 1, title: "Show HN: A really interesting project that does something cool", score: 123, kids: [2, 3, 4, 5], descendants: 42))
-        .environmentObject(HNAuthManager())
-        .environmentObject(StoryStateModel())
+    List {
+        StoryRowView(story: StoryRow(
+            id: 1,
+            title: "Show HN: A tiny computer that helps you understand how the internet works",
+            score: 123, kids: [2, 3, 4, 5], descendants: 42,
+            url: "https://example.com/project",
+            time: Int(Date().timeIntervalSince1970) - 7200
+        ))
+        StoryRowView(story: StoryRow(
+            id: 2, title: "Ask HN: What are you building this weekend?",
+            score: 18, kids: [], descendants: 0
+        ))
+    }
+    .environmentObject(HNAuthManager())
+    .environmentObject(StoryStateModel())
 }
