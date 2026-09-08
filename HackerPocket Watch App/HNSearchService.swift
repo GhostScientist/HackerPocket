@@ -19,6 +19,10 @@ private struct AlgoliaHit: Decodable {
     let storyTitle: String?
     let points: Int?
     let numComments: Int?
+    let url: String?
+    let createdAt: Int?
+    let author: String?
+    let storyText: String?
 
     enum CodingKeys: String, CodingKey {
         case objectID
@@ -26,6 +30,10 @@ private struct AlgoliaHit: Decodable {
         case storyTitle = "story_title"
         case points
         case numComments = "num_comments"
+        case url
+        case createdAt = "created_at_i"
+        case author
+        case storyText = "story_text"
     }
 
     /// `nil` for hits we cannot render: an ID that isn't an HN item number, or
@@ -42,7 +50,12 @@ private struct AlgoliaHit: Decodable {
             title: resolvedTitle,
             score: points ?? 0,
             kids: [],
-            descendants: numComments ?? 0
+            descendants: numComments ?? 0,
+            url: url,
+            time: createdAt,
+            by: author,
+            text: storyText,
+            type: "story"
         )
     }
 }

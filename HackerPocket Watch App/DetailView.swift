@@ -16,7 +16,8 @@ struct DetailView: View {
     @StateObject private var viewModel = StoryDetailViewModel()
 
     @State private var webSession: ASWebAuthenticationSession?
-    @State private var handoffActivity: NSUserActivity?
+    @State private var handoffURL: URL?
+    @State private var handoffTitle = ""
 
     var fallback: Story? = nil
 
@@ -32,12 +33,8 @@ struct DetailView: View {
 
     private func activateHandoff(urlString: String, title: String) {
         guard let url = URL(string: urlString) else { return }
-        let activity = NSUserActivity(activityType: NSUserActivityTypeBrowsingWeb)
-        activity.webpageURL = url
-        activity.isEligibleForHandoff = true
-        activity.title = title
-        activity.becomeCurrent()
-        handoffActivity = activity
+        handoffTitle = title
+        handoffURL = url
     }
 
     var body: some View {
@@ -55,16 +52,15 @@ struct DetailView: View {
             }
             .padding()
         }
+        .background(.black)
+        .tint(.orange)
         .navigationTitle("Story")
-        .userActivity("NSUserActivityTypeBrowsingWeb", isActive: viewModel.story?.url != nil) { activity in
-            if let urlString = viewModel.story?.url, let url = URL(string: urlString) {
-                activity.webpageURL = url
-                activity.isEligibleForHandoff = true
-                activity.title = viewModel.story?.title
-            }
+        .userActivity("NSUserActivityTypeBrowsingWeb", isActive: handoffURL != nil) { activity in
+            activity.webpageURL = handoffURL
+            activity.title = handoffTitle
         }
         .onDisappear {
-            handoffActivity?.resignCurrent()
+            handoffURL = nil
         }
         .onAppear {
             storyState.loadIfNeeded()
@@ -75,99 +71,143 @@ struct DetailView: View {
 
     @ViewBuilder
     private func storyContent(_ story: Story) -> some View {
-        // Title
         Text(story.title)
             .font(.headline)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityAddTraits(.isHeader)
 
-        // Metadata
-        Text(.init(story.postedDetails))
+        if let domain = story.asRow.domain {
+            Text(domain)
+                .font(.footnote)
+                .foregroundStyle(.orange)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+
+        Text(story.postedDetails)
             .font(.caption2)
             .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
 
-        // Source URL display
-        if let url = story.url {
-            if let host = URL(string: url)?.host {
-                Text(host)
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+        if let text = story.text {
+            let plainText = text.htmlToPlainText()
+            if !plainText.isEmpty {
+                Text(plainText)
+                    .font(.body)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
 
         Divider()
 
-        // Action buttons
         VStack(spacing: 8) {
-            if let storyURL = story.url {
-                Button {
-                    activateHandoff(urlString: storyURL, title: story.title)
-                } label: {
-                    Label("Open on iPhone", systemImage: "iphone")
-                        .frame(maxWidth: .infinity)
-                        .font(.caption)
-                }
-                .tint(.orange)
-                .accessibilityHint("Continue this article on your iPhone with Handoff.")
-
-                Text("Handoff is available on your iPhone.")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .center)
-
-                Button {
-                    openBrowser(storyURL)
-                } label: {
-                    Label("Read Article", systemImage: "safari")
-                        .frame(maxWidth: .infinity)
-                        .font(.caption)
-                }
-                .tint(.orange.opacity(0.8))
-                .accessibilityHint("Read this article in the watchOS web view.")
-            }
-
             if let kids = story.kids, !kids.isEmpty {
                 NavigationLink {
                     CommentsView(commentIds: kids, storyId: story.id)
                 } label: {
-                    // Job posts and some dead items carry no `descendants` even
-                    // when they have kids, so never render "0 Comments".
-                    Label(story.commentButtonTitle, systemImage: "bubble.left.and.bubble.right")
-                        .frame(maxWidth: .infinity)
-                        .font(.caption)
+                    actionLabel(story.commentButtonTitle, systemImage: "bubble.left.and.bubble.right")
                 }
-                .tint(.blue)
+                .tint(.orange)
+            } else if story.descendants > 0 {
+                // Search and older saved rows may know the count without comment IDs.
+                Button {
+                    openBrowser("https://news.ycombinator.com/item?id=\(story.id)")
+                } label: {
+                    actionLabel(story.commentButtonTitle, systemImage: "bubble.left.and.bubble.right")
+                }
+                .accessibilityHint("Read the discussion on Hacker News.")
+            } else if story.type != "job" {
+                NavigationLink {
+                    CommentsView(commentIds: [], storyId: story.id)
+                } label: {
+                    actionLabel("Comments", systemImage: "bubble.left.and.bubble.right")
+                }
             }
 
-            let shareUrl: String = story.url ?? "https://news.ycombinator.com/item?id=\(story.id)"
-            ShareLink(item: shareUrl) {
-                Label("Share", systemImage: "square.and.arrow.up")
-                    .frame(maxWidth: .infinity)
-                    .font(.caption)
-            }
-            .tint(.gray)
-
-            // Open on HN
             Button {
-                openBrowser("https://news.ycombinator.com/item?id=\(story.id)")
+                if storyState.isSaved(story.id) {
+                    storyState.unsave(story.id)
+                } else {
+                    storyState.save(story.asRow)
+                }
             } label: {
-                Label("View on HN", systemImage: "globe")
-                    .frame(maxWidth: .infinity)
-                    .font(.caption)
+                actionLabel(
+                    storyState.isSaved(story.id) ? "Unsave Story" : "Save Story",
+                    systemImage: storyState.isSaved(story.id) ? "bookmark.fill" : "bookmark"
+                )
             }
-            .tint(.orange.opacity(0.7))
-        }
+            .accessibilityHint(
+                storyState.isSaved(story.id)
+                    ? "Remove this story from saved stories."
+                    : "Keep this story for later."
+            )
 
-        // Story text content (for Ask HN, Show HN, etc.)
-        if let text = story.text, !text.isEmpty {
+            if let storyURL = story.url {
+                Button {
+                    openBrowser(storyURL)
+                } label: {
+                    actionLabel("Read Article", systemImage: "safari")
+                }
+                .tint(.gray.opacity(0.3))
+                .accessibilityHint("Read this article in the watchOS web view.")
+
+                Button {
+                    activateHandoff(urlString: storyURL, title: story.title)
+                } label: {
+                    actionLabel("Handoff to iPhone", systemImage: "iphone")
+                }
+                .tint(.gray.opacity(0.3))
+                .accessibilityHint("Make this article available through Handoff on a nearby iPhone.")
+
+                if handoffURL != nil {
+                    Text("On your nearby iPhone, open the App Switcher and look for Handoff. Both devices need Handoff enabled and the same Apple Account.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
             Divider()
-            Text(text.htmlToPlainText())
-                .font(.caption2)
+
+            NavigationLink {
+                List {
+                    let shareURL = story.url ?? "https://news.ycombinator.com/item?id=\(story.id)"
+                    ShareLink(item: shareURL) {
+                        actionLabel("Share", systemImage: "square.and.arrow.up")
+                    }
+
+                    Button {
+                        openBrowser("https://news.ycombinator.com/item?id=\(story.id)")
+                    } label: {
+                        actionLabel("View on HN", systemImage: "globe")
+                    }
+                }
+                .navigationTitle("More Actions")
+                .tint(.orange)
+            } label: {
+                actionLabel("More Actions", systemImage: "ellipsis")
+            }
+            .tint(.gray.opacity(0.3))
         }
+    }
+
+    private func actionLabel(_ title: String, systemImage: String) -> some View {
+        Label(title, systemImage: systemImage)
+            .font(.footnote)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, minHeight: 36)
     }
 }
 
 #Preview {
     NavigationStack {
-        DetailView(number: 39810320)
+        DetailView(number: 39810320, fallback: Story(
+            id: 39810320,
+            title: "Ask HN: What small tools have made the biggest difference to your working day?",
+            by: "curious_builder", score: 128,
+            time: Int(Date().timeIntervalSince1970) - 3600,
+            descendants: 42, kids: [1, 2],
+            text: "I am interested in the quiet improvements: a script, a notebook, or a habit.<p>What have you kept using, and why?"
+        ))
             .environmentObject(HNAuthManager())
             .environmentObject(StoryStateModel())
     }

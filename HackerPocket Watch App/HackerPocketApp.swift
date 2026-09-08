@@ -12,17 +12,12 @@ struct HackerPocket_Watch_AppApp: App {
     @WKApplicationDelegateAdaptor(HackerPocketAppDelegate.self) private var appDelegate
     @StateObject private var authManager = HNAuthManager()
     @StateObject private var storyState = StoryStateModel()
-    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
 
     var body: some Scene {
         WindowGroup {
-            if hasSeenOnboarding {
-                ContentView()
-                    .environmentObject(authManager)
-                    .environmentObject(storyState)
-            } else {
-                OnboardingView(hasSeenOnboarding: $hasSeenOnboarding)
-            }
+            ContentView()
+                .environmentObject(authManager)
+                .environmentObject(storyState)
         }
     }
 }

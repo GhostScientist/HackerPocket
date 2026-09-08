@@ -56,8 +56,22 @@ struct Story: Codable {
     }
 
     var postedDetails: String {
-        let timestampText = timeAgoString(from: time)
-        return "\(score) points by **\(by)** \(timestampText)"
+        var details = ["\(score) points"]
+        if !by.isEmpty && by != "unknown" {
+            details.append("by \(by)")
+        }
+        if time > 0 {
+            details.append(timeAgoString(from: time))
+        }
+        return details.joined(separator: " · ")
+    }
+
+    var asRow: StoryRow {
+        StoryRow(
+            id: id, title: title, score: score, kids: kids ?? [],
+            descendants: descendants, url: url, time: time > 0 ? time : nil,
+            by: by, text: text, type: type
+        )
     }
 
     /// Job posts have no `descendants` and often no comments at all, so the
@@ -74,9 +88,14 @@ struct StoryRow: Codable, Hashable, Identifiable {
     let score: Int
     let kids: [Int]
     let descendants: Int
+    let url: String?
+    let time: Int?
+    let by: String?
+    let text: String?
+    let type: String?
 
     enum CodingKeys: String, CodingKey {
-        case id, title, score, kids, descendants
+        case id, title, score, kids, descendants, url, time, by, text, type
     }
 
     init(from decoder: Decoder) throws {
@@ -86,24 +105,56 @@ struct StoryRow: Codable, Hashable, Identifiable {
         score = try container.decodeIfPresent(Int.self, forKey: .score) ?? 0
         kids = try container.decodeIfPresent([Int].self, forKey: .kids) ?? []
         descendants = try container.decodeIfPresent(Int.self, forKey: .descendants) ?? 0
+        url = try container.decodeIfPresent(String.self, forKey: .url)
+        time = try container.decodeIfPresent(Int.self, forKey: .time)
+        by = try container.decodeIfPresent(String.self, forKey: .by)
+        text = try container.decodeIfPresent(String.self, forKey: .text)
+        type = try container.decodeIfPresent(String.self, forKey: .type)
     }
 
-    init(id: Int, title: String, score: Int, kids: [Int], descendants: Int = 0) {
+    init(id: Int, title: String, score: Int, kids: [Int], descendants: Int = 0,
+         url: String? = nil, time: Int? = nil, by: String? = nil,
+         text: String? = nil, type: String? = nil) {
         self.id = id
         self.title = title
         self.score = score
         self.kids = kids
         self.descendants = descendants
+        self.url = url
+        self.time = time
+        self.by = by
+        self.text = text
+        self.type = type
+    }
+
+    var domain: String? {
+        guard let url, let host = URL(string: url)?.host, !host.isEmpty else { return nil }
+        return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
+    }
+
+    var sourceDetails: String? {
+        var details: [String] = []
+        if let domain {
+            details.append(domain)
+        }
+        if let time, time > 0 {
+            details.append(timeAgoString(from: time))
+        }
+        return details.isEmpty ? nil : details.joined(separator: " · ")
     }
 
     var asStory: Story {
         Story(
             id: id,
             title: title,
-            by: "unknown",
+            by: by ?? "unknown",
             score: score,
-            time: 0,
-            kids: kids
+            time: time ?? 0,
+            url: url,
+            descendants: descendants,
+            kids: kids,
+            text: text,
+            type: type ?? "story"
         )
     }
 }
