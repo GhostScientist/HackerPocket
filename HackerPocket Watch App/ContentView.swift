@@ -56,6 +56,15 @@ struct ContentView: View {
                     RootActionsView(
                         isLoggedIn: authManager.isLoggedIn,
                         isRefreshing: viewModel.isLoading || viewModel.isRevalidating,
+                        canStartBriefing: viewModel.hasContent,
+                        startBriefing: {
+                            // Freeze this session so refreshes cannot change its order or length.
+                            briefingStories = Array(viewModel.stories.prefix(5))
+                            briefingFeed = feed
+                            briefingUpdatedAt = viewModel.lastUpdated
+                            navigationPath.removeLast()
+                            navigationPath.append(RootDestination.briefing)
+                        },
                         refresh: viewModel.refresh
                     )
                 case .account:
@@ -88,6 +97,15 @@ struct ContentView: View {
                 }
             }
             .toolbar {
+                // watchOS keeps the top corners for navigation chrome; using them
+                // leaves the story list unobstructed instead of floating buttons over it.
+                ToolbarItem(placement: .topBarLeading) {
+                    NavigationLink(value: RootDestination.actions) {
+                        Image(systemName: "ellipsis")
+                    }
+                    .accessibilityLabel("More")
+                    .accessibilityHint("Open briefing, saved stories, search, history, account, and refresh.")
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink(value: RootDestination.feeds) {
                         Image(systemName: "line.3.horizontal.decrease")
@@ -95,37 +113,21 @@ struct ContentView: View {
                     .accessibilityLabel("Change Feed")
                     .accessibilityValue(feed.displayName)
                 }
-                ToolbarItemGroup(placement: .bottomBar) {
-                    Button {
-                        // Freeze this session so refreshes cannot change its order or length.
-                        briefingStories = Array(viewModel.stories.prefix(5))
-                        briefingFeed = feed
-                        briefingUpdatedAt = viewModel.lastUpdated
-                        navigationPath.append(RootDestination.briefing)
-                    } label: {
-                        Image(systemName: "rectangle.stack")
-                    }
-                    .disabled(!viewModel.hasContent)
-                    .accessibilityLabel("Briefing")
-                    .accessibilityHint("Browse up to five stories from this feed.")
-
-                    NavigationLink(value: RootDestination.savedStories) {
-                        Image(systemName: "bookmark")
-                    }
-                    .accessibilityLabel("Saved Stories")
-
-                    NavigationLink(value: RootDestination.actions) {
-                        Image(systemName: "ellipsis")
-                    }
-                    .accessibilityLabel("More")
-                    .accessibilityHint("Open search, history, account, and refresh actions.")
-                }
             }
         }
         .tint(.orange)
         .onAppear {
             storyState.loadIfNeeded()
             viewModel.loadIfNeeded(feed: feed)
+            #if DEBUG
+            // Simulator QA hook: `SIMCTL_CHILD_HACKERPOCKET_OPEN_STORY=<id> xcrun simctl launch ...`
+            // pushes a story so screens can be screenshotted without tapping through.
+            if navigationPath.isEmpty,
+               let raw = ProcessInfo.processInfo.environment["HACKERPOCKET_OPEN_STORY"],
+               let storyID = Int(raw) {
+                navigationPath.append(storyID)
+            }
+            #endif
         }
         .onChange(of: feed) { _, newFeed in
             viewModel.select(newFeed)
@@ -183,12 +185,26 @@ struct ContentView: View {
 private struct RootActionsView: View {
     let isLoggedIn: Bool
     let isRefreshing: Bool
+    let canStartBriefing: Bool
+    let startBriefing: () -> Void
     let refresh: () -> Void
 
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         List {
+            Section {
+                Button(action: startBriefing) {
+                    Label("Briefing", systemImage: "rectangle.stack")
+                }
+                .disabled(!canStartBriefing)
+                .accessibilityHint("Browse up to five stories from this feed.")
+
+                NavigationLink(value: RootDestination.savedStories) {
+                    Label("Saved Stories", systemImage: "bookmark")
+                }
+            }
+
             NavigationLink {
                 SearchView()
             } label: {

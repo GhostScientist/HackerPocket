@@ -55,6 +55,13 @@ struct DetailView: View {
         .background(.black)
         .tint(.orange)
         .navigationTitle("Story")
+        .toolbar {
+            if let story = viewModel.story {
+                ToolbarItem(placement: .topBarTrailing) {
+                    saveToolbarButton(story)
+                }
+            }
+        }
         .userActivity("NSUserActivityTypeBrowsingWeb", isActive: handoffURL != nil) { activity in
             activity.webpageURL = handoffURL
             activity.title = handoffTitle
@@ -78,14 +85,15 @@ struct DetailView: View {
 
         if let domain = story.asRow.domain {
             Text(domain)
-                .font(.footnote)
-                .foregroundStyle(.orange)
-                .fixedSize(horizontal: false, vertical: true)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
         }
 
         Text(story.postedDetails)
             .font(.caption2)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(.tertiary)
             .fixedSize(horizontal: false, vertical: true)
 
         if let text = story.text {
@@ -114,6 +122,7 @@ struct DetailView: View {
                 } label: {
                     actionLabel(story.commentButtonTitle, systemImage: "bubble.left.and.bubble.right")
                 }
+                .tint(.orange)
                 .accessibilityHint("Read the discussion on Hacker News.")
             } else if story.type != "job" {
                 NavigationLink {
@@ -121,25 +130,8 @@ struct DetailView: View {
                 } label: {
                     actionLabel("Comments", systemImage: "bubble.left.and.bubble.right")
                 }
+                .tint(.orange)
             }
-
-            Button {
-                if storyState.isSaved(story.id) {
-                    storyState.unsave(story.id)
-                } else {
-                    storyState.save(story.asRow)
-                }
-            } label: {
-                actionLabel(
-                    storyState.isSaved(story.id) ? "Unsave Story" : "Save Story",
-                    systemImage: storyState.isSaved(story.id) ? "bookmark.fill" : "bookmark"
-                )
-            }
-            .accessibilityHint(
-                storyState.isSaved(story.id)
-                    ? "Remove this story from saved stories."
-                    : "Keep this story for later."
-            )
 
             if let storyURL = story.url {
                 Button {
@@ -147,47 +139,67 @@ struct DetailView: View {
                 } label: {
                     actionLabel("Read Article", systemImage: "safari")
                 }
-                .tint(.gray.opacity(0.3))
+                .tint(.secondaryAction)
                 .accessibilityHint("Read this article in the watchOS web view.")
-
-                Button {
-                    activateHandoff(urlString: storyURL, title: story.title)
-                } label: {
-                    actionLabel("Handoff to iPhone", systemImage: "iphone")
-                }
-                .tint(.gray.opacity(0.3))
-                .accessibilityHint("Make this article available through Handoff on a nearby iPhone.")
-
-                if handoffURL != nil {
-                    Text("On your nearby iPhone, open the App Switcher and look for Handoff. Both devices need Handoff enabled and the same Apple Account.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
             }
 
-            Divider()
-
             NavigationLink {
-                List {
-                    let shareURL = story.url ?? "https://news.ycombinator.com/item?id=\(story.id)"
-                    ShareLink(item: shareURL) {
-                        actionLabel("Share", systemImage: "square.and.arrow.up")
-                    }
-
-                    Button {
-                        openBrowser("https://news.ycombinator.com/item?id=\(story.id)")
-                    } label: {
-                        actionLabel("View on HN", systemImage: "globe")
-                    }
-                }
-                .navigationTitle("More Actions")
-                .tint(.orange)
+                moreActions(story)
             } label: {
                 actionLabel("More Actions", systemImage: "ellipsis")
             }
-            .tint(.gray.opacity(0.3))
+            .tint(.secondaryAction)
         }
+    }
+
+    @ViewBuilder
+    private func moreActions(_ story: Story) -> some View {
+        let hnURL = "https://news.ycombinator.com/item?id=\(story.id)"
+        List {
+            if let storyURL = story.url {
+                Section {
+                    Button {
+                        activateHandoff(urlString: storyURL, title: story.title)
+                    } label: {
+                        Label("Handoff to iPhone", systemImage: "iphone")
+                    }
+                    .accessibilityHint("Make this article available through Handoff on a nearby iPhone.")
+                } footer: {
+                    if handoffURL != nil {
+                        Text("On your nearby iPhone, open the App Switcher and look for Handoff. Both devices need Handoff enabled and the same Apple Account.")
+                    }
+                }
+            }
+
+            ShareLink(item: story.url ?? hnURL) {
+                Label("Share", systemImage: "square.and.arrow.up")
+            }
+
+            Button {
+                openBrowser(hnURL)
+            } label: {
+                Label("View on HN", systemImage: "globe")
+            }
+        }
+        .navigationTitle("More Actions")
+        .tint(.orange)
+    }
+
+    @ViewBuilder
+    private func saveToolbarButton(_ story: Story) -> some View {
+        let isSaved = storyState.isSaved(story.id)
+        Button {
+            if isSaved {
+                storyState.unsave(story.id)
+            } else {
+                storyState.save(story.asRow)
+                WatchHaptics.success()
+            }
+        } label: {
+            Image(systemName: isSaved ? "bookmark.fill" : "bookmark")
+        }
+        .accessibilityLabel(isSaved ? "Unsave Story" : "Save Story")
+        .accessibilityHint(isSaved ? "Remove this story from saved stories." : "Keep this story for later.")
     }
 
     private func actionLabel(_ title: String, systemImage: String) -> some View {
@@ -196,6 +208,11 @@ struct DetailView: View {
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, minHeight: 36)
     }
+}
+
+private extension ShapeStyle where Self == Color {
+    /// Neutral tint for secondary actions: readable white label on a subdued capsule.
+    static var secondaryAction: Color { .white }
 }
 
 #Preview {

@@ -1,0 +1,14 @@
+# Xcode user state (per-developer, never release-relevant)
+xcuserdata/
+*.xcuserstate
+*.xcuserdatad/
+DerivedData/
+build/
+*.xcarchive
+
+# macOS
+.DS_Store
+
+# Release tooling scratch
+*.ipa
+*.dSYM.zip
